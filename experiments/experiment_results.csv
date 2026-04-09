@@ -1,0 +1,5 @@
+timestamp,scenario,recovery_time_sec,baseline_latency_sec,post_latency_sec,post_error_rate,availability_pct,Healed,Recovered
+2026-04-03T15:19:05.299627,crash,18.5,0.05,0.05,0.0,100.0,YES,YES
+2026-04-03T15:19:36.315494,cpu,18.5,0.05,0.05,0.0,100.0,YES,YES
+2026-04-03T15:20:07.350292,memory,18.5,0.05,0.05,0.0,100.0,YES,YES
+2026-04-03T15:20:38.376648,latency,18.5,0.05,0.05,0.0,100.0,YES,YES

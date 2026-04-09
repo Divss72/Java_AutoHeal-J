@@ -1,0 +1,69 @@
+services:
+  user-service:
+    build:
+      context: .
+      dockerfile: microservices/user-service/Dockerfile
+    ports:
+      - "8081:8081"
+  order-service:
+    build:
+      context: .
+      dockerfile: microservices/order-service/Dockerfile
+    ports:
+      - "8082:8082"
+  payment-service:
+    build:
+      context: .
+      dockerfile: microservices/payment-service/Dockerfile
+    ports:
+      - "8083:8083"
+  gateway-service:
+    build:
+      context: .
+      dockerfile: microservices/gateway-service/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_URI=http://user-service:8081
+      - SPRING_CLOUD_GATEWAY_ROUTES_1_URI=http://order-service:8082
+      - SPRING_CLOUD_GATEWAY_ROUTES_2_URI=http://payment-service:8083
+
+  anomaly-detection-engine:
+    build:
+      context: ./anomaly-detection-engine
+      dockerfile: Dockerfile
+    environment:
+      - PROMETHEUS_URL=http://prometheus:9090
+      - HEALING_ENGINE_URL=http://healing-engine:5000/alert
+      - DASHBOARD_URL=http://autoheal-dashboard-service:8080
+
+  healing-engine:
+    build:
+      context: ./healing-engine
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - USE_DOCKER=true
+      - DASHBOARD_URL=http://autoheal-dashboard-service:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  autoheal-dashboard-service:
+    build:
+      context: ./microservices/autoheal-dashboard-service
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8080"
+    environment:
+      - OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+      - PROMETHEUS_URL=http://prometheus:9090
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus-docker.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'

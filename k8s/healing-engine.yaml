@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: healing-engine
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: healing-engine
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: healing-engine
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: healing-engine
+subjects:
+- kind: ServiceAccount
+  name: healing-engine
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healing-engine
+  namespace: default
+  labels:
+    app: healing-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healing-engine
+  template:
+    metadata:
+      labels:
+        app: healing-engine
+    spec:
+      serviceAccountName: healing-engine
+      containers:
+        - name: healing-engine
+          image: healing-engine:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          env:
+            - name: TARGET_NAMESPACE
+              value: "default"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healing-engine
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: healing-engine
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000

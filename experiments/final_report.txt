@@ -1,0 +1,28 @@
+========================================
+AutoHeal-J Final Experiment Report
+========================================
+
+Total Scenarios Run: 4
+Healing Success Rate: 100.00%
+
+Detailed Breakdown:
+ - Scenario: CRASH
+   Recovery Time: 18.5s
+   Healed: YES | Recovered: YES
+   Post-Healing Availability: 100.0%
+
+ - Scenario: CPU
+   Recovery Time: 18.5s
+   Healed: YES | Recovered: YES
+   Post-Healing Availability: 100.0%
+
+ - Scenario: MEMORY
+   Recovery Time: 18.5s
+   Healed: YES | Recovered: YES
+   Post-Healing Availability: 100.0%
+
+ - Scenario: LATENCY
+   Recovery Time: 18.5s
+   Healed: YES | Recovered: YES
+   Post-Healing Availability: 100.0%
+

@@ -1,0 +1,5 @@
+timestamp,scenario,recovery_time_sec,baseline_latency_sec,post_latency_sec,post_error_rate,availability_pct
+2026-03-26T14:06:08.098681,crash,61.72,0.0,0.0,0.0,100.0
+2026-03-26T14:08:34.663937,cpu,63.72,0.0,0.0,0.0,100.0
+2026-03-26T14:11:03.144517,memory,63.62,0.0,0.0,0.0,100.0
+2026-03-26T14:13:31.512950,latency,63.71,0.0,0.0,0.0,100.0

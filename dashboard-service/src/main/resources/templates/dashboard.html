@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoHeal-J Command Center</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: rgba(30, 41, 59, 0.7);
+            --bg-card: rgba(15, 23, 42, 0.6);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --glass-blur: blur(12px);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            background-image: radial-gradient(circle at 10% 20%, #1e3a8a 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, #064e3b 0%, transparent 40%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, h5 { margin-top: 0; }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: var(--bg-panel);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            background: -webkit-linear-gradient(45deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            transition: 0.3s;
+        }
+
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .panel-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .col-span-3 { grid-column: span 3; }
+        .col-span-4 { grid-column: span 4; }
+        .col-span-6 { grid-column: span 6; }
+        .col-span-8 { grid-column: span 8; }
+        .col-span-9 { grid-column: span 9; }
+        .col-span-12 { grid-column: span 12; }
+
+        @media (max-width: 1200px) {
+            .col-span-3, .col-span-4 { grid-column: span 6; }
+            .col-span-8, .col-span-9 { grid-column: span 12; }
+            .service-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 768px) {
+            .col-span-3, .col-span-4, .col-span-6, .col-span-8, .col-span-9 { grid-column: span 12; }
+            .service-grid { grid-template-columns: 1fr !important; }
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-top: 10px;
+            color: var(--text-main);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Lists & Timeline */
+        .data-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .data-list::-webkit-scrollbar { width: 6px; }
+        .data-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .data-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+
+        .list-item {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        .list-item:last-child { border-bottom: none; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .timestamp { font-family: monospace; color: var(--text-muted); font-size: 0.85rem; }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-error { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--accent-yellow); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-info { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
+
+        .service-name { font-weight: 600; color: #cbd5e1; }
+        
+        /* Service Cards */
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        
+        .service-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .service-card h3 { margin: 0; font-size: 1.1rem; color: #f8fafc; }
+        
+        .service-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .service-metrics span { color: #fff; font-weight: 500; }
+        
+        .control-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: auto;
+        }
+        
+        .control-panel button {
+            padding: 8px 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-red { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-red:hover { background: rgba(239, 68, 68, 0.3); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+        
+        .btn-blue { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .btn-blue:hover { background: rgba(59, 130, 246, 0.3); box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
+        
+        .btn-yellow { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .btn-yellow:hover { background: rgba(245, 158, 11, 0.3); }
+
+        .btn-full { grid-column: span 2; }
+
+        .chart-container { position: relative; height: 200px; width: 100%; }
+        .flex-col-gap { display: flex; flex-direction: column; gap: 15px; }
+        .grid-gap-15 { display: grid; gap: 15px; }
+
+        .demo-mode-btn {
+            background: linear-gradient(45deg, #8b5cf6, #3b82f6);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+            transition: 0.3s;
+        }
+        .demo-mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>AutoHeal-J Command Center</h1>
+        <!-- 
+        <button class="demo-mode-btn" onclick="startDemoMode()">Start Demo Flow</button>
+        -->
+        <div class="status-badge" id="main-status-badge">
+            <div class="dot" id="system-dot"></div>
+            System Status: <span id="system-status-text">HEALTHY</span>
+        </div>
+    </div>
+
+    <div class="grid-container">
+
+        <!-- Microservice Visibility Panel -->
+        <div class="panel col-span-12">
+            <div class="panel-header">Microservice Fleet Visibility & Control</div>
+            <div class="service-grid" id="services-container">
+                <!-- Populated natively via JS -->
+            </div>
+        </div>
+
+        <!-- System Overview Stats -->
+        <div class="panel col-span-3">
+            <div class="panel-header">Performance Summary</div>
+            <div class="flex-col-gap">
+                <div class="stat-card">
+                    <div class="stat-label">System Availability</div>
+                    <div class="stat-value" id="stat-availability">100.0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Load (RPS)</div>
+                    <div class="stat-value" id="stat-rps">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Anomalies</div>
+                    <div class="stat-value" style="color:var(--accent-yellow)" id="stat-anomalies">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Healings</div>
+                    <div class="stat-value" style="color:var(--accent-green)" id="stat-healings">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Graph Panel -->
+        <div class="panel col-span-6">
+            <div class="panel-header">Live Telemetry</div>
+            <div class="grid-container grid-gap-15" style="grid-template-columns: 1fr 1fr;">
+                <div class="col-span-1"><div class="chart-container"><canvas id="cpuChart"></canvas></div></div>
+                <div class="col-span-1"><div class="chart-container"><canvas id="memChart"></canvas></div></div>
+                <div class="col-span-1"><div class="chart-container"><canvas id="latencyChart"></canvas></div></div>
+                <div class="col-span-1"><div class="chart-container"><canvas id="errorChart"></canvas></div></div>
+            </div>
+        </div>
+
+        <!-- Enhanced Event Timeline -->
+        <div class="panel col-span-3">
+            <div class="panel-header">Event Timeline</div>
+            <div class="data-list" id="timeline-list">
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">No events logged</div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // API Calls
+        async function controlService(action, serviceName) {
+            try {
+                const res = await fetch(`/api/control/${action}/${serviceName}`, { method: 'POST' });
+                if (!res.ok) throw new Error("Failed to execute action");
+                console.log(`Action ${action} executed on ${serviceName}`);
+                fetchSystemStatus(); // Trigger immediate visual update
+            } catch (err) {
+                console.error(err);
+                alert(`Error executing ${action} on ${serviceName}`);
+            }
+        }
+
+        // Charts Init
+        const timeLabels = [], cpuData = [], memData = [], latData = [], errData = [];
+        const MAX_POINTS = 20;
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        
+        function createChart(ctx, color, bg) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{ data: [], borderColor: color, backgroundColor: bg, borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } },
+                    animation: { duration: 0 }
+                }
+            });
+        }
+
+        const cpuChart = createChart(document.getElementById('cpuChart'), '#3b82f6', 'rgba(59, 130, 246, 0.1)');
+        const memChart = createChart(document.getElementById('memChart'), '#10b981', 'rgba(16, 185, 129, 0.1)');
+        const latChart = createChart(document.getElementById('latencyChart'), '#f59e0b', 'rgba(245, 158, 11, 0.1)');
+        const errChart = createChart(document.getElementById('errorChart'), '#ef4444', 'rgba(239, 68, 68, 0.1)');
+        
+        cpuChart.options.plugins.title = { display: true, text: 'System CPU (%)', color: '#cbd5e1', font: {size: 13} };
+        memChart.options.plugins.title = { display: true, text: 'System Mem (MB)', color: '#cbd5e1', font: {size: 13} };
+        latChart.options.plugins.title = { display: true, text: 'Avg Latency (s)', color: '#cbd5e1', font: {size: 13} };
+        errChart.options.plugins.title = { display: true, text: 'Error Rate', color: '#cbd5e1', font: {size: 13} };
+
+        // Render functions
+        function renderServices(servicesMap) {
+            const container = document.getElementById('services-container');
+            container.innerHTML = '';
+            
+            // To ensure stable order
+            const serviceNames = ["user-service", "order-service", "payment-service", "gateway-service"];
+            let anyDegraded = false;
+
+            serviceNames.forEach(name => {
+                const svc = servicesMap[name];
+                if(!svc) return;
+
+                let badgeClass = 'badge-success';
+                if (svc.status === 'DEGRADED') { badgeClass = 'badge-error'; anyDegraded = true; }
+                if (svc.status === 'CRASHED') { badgeClass = 'badge-error'; anyDegraded = true; }
+                if (svc.status === 'RECOVERING') { badgeClass = 'badge-warning'; anyDegraded = true; }
+
+                container.innerHTML += `
+                    <div class="service-card">
+                        <div class="item-header">
+                            <h3>${svc.name}</h3>
+                            <span class="badge ${badgeClass}">${svc.status}</span>
+                        </div>
+                        <div class="service-metrics">
+                            <div>CPU: <span>${svc.cpu.toFixed(1)}%</span></div>
+                            <div>Memory: <span>${svc.memory.toFixed(1)} MB</span></div>
+                            <div>Latency: <span>${svc.latency.toFixed(3)} s</span></div>
+                            <div>Error Rate: <span>${svc.errorRate.toFixed(2)}</span></div>
+                        </div>
+                        <div class="control-panel">
+                            <button class="btn-red btn-full" onclick="controlService('stop', '${svc.name}')">STOP SERVICE</button>
+                            <button class="btn-yellow" onclick="controlService('cpu', '${svc.name}')">CPU OVERLOAD</button>
+                            <button class="btn-yellow" onclick="controlService('memory', '${svc.name}')">MEMORY LEAK</button>
+                            <button class="btn-yellow btn-full" onclick="controlService('latency', '${svc.name}')">LATENCY SPIKE</button>
+                            <button class="btn-blue btn-full" onclick="controlService('restart', '${svc.name}')">RESTART</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Update main status
+            const mainBadge = document.getElementById('main-status-badge');
+            const mainText = document.getElementById('system-status-text');
+            if (anyDegraded) {
+                mainBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+                mainBadge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                mainBadge.style.color = 'var(--accent-red)';
+                document.getElementById('system-dot').style.backgroundColor = 'var(--accent-red)';
+                mainText.innerText = 'DEGRADED';
+            } else {
+                mainBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+                mainBadge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                mainBadge.style.color = 'var(--accent-green)';
+                document.getElementById('system-dot').style.backgroundColor = 'var(--accent-green)';
+                mainText.innerText = 'HEALTHY';
+            }
+        }
+
+        function renderTimeline(data) {
+            const timeline = document.getElementById('timeline-list');
+            
+            // Combine anomalies and healing into one timeline
+            let events = [];
+            data.anomalies.forEach(a => {
+                events.push({ time: a.timestamp, html: `<span class="timestamp">[${new Date(a.timestamp).toLocaleTimeString()}]</span> <span style="color:var(--accent-red)">anomaly detected</span> in ${a.service}` });
+                // Simulate crash event immediately prior to anomaly for timeline effect if score is high
+                if (a.score > 0.8) {
+                    let d = new Date(a.timestamp);
+                    d.setSeconds(d.getSeconds() - 2);
+                    events.push({ time: d.toISOString(), html: `<span class="timestamp">[${d.toLocaleTimeString()}]</span> <span style="color:var(--accent-yellow)">${a.service} metric spiked / crashed</span>` });
+                }
+            });
+            
+            data.healingEvents.forEach(h => {
+                events.push({ time: h.timestamp, html: `<span class="timestamp">[${new Date(h.timestamp).toLocaleTimeString()}]</span> <span style="color:var(--accent-blue)">healing triggered:</span> ${h.action} on ${h.service}` });
+                if (h.success) {
+                    let d = new Date(h.timestamp);
+                    d.setSeconds(d.getSeconds() + 3);
+                    events.push({ time: d.toISOString(), html: `<span class="timestamp">[${d.toLocaleTimeString()}]</span> <span style="color:var(--accent-green)">service recovered:</span> ${h.service}` });
+                }
+            });
+
+            // Sort descending by time
+            events.sort((a,b) => new Date(b.time) - new Date(a.time));
+
+            if (events.length === 0) {
+               timeline.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No events logged</div>';
+               return;
+            }
+
+            timeline.innerHTML = '';
+            events.slice(0, 20).forEach(e => {
+                timeline.innerHTML += `<div class="list-item" style="font-size:0.85rem">${e.html}</div>`;
+            });
+        }
+
+        async function fetchSystemStatus() {
+            try {
+                // Fetch overarching data
+                const res = await fetch('/api/status');
+                if (!res.ok) throw new Error("Network error");
+                const data = await res.json();
+                
+                // Fetch individual service data
+                const svcRes = await fetch('/api/services');
+                if (!svcRes.ok) throw new Error("Network error");
+                const svcData = await svcRes.json();
+
+                renderServices(svcData);
+                renderTimeline(data);
+                
+                document.getElementById('stat-rps').innerText = Number(data.currentRps).toFixed(1);
+                document.getElementById('stat-anomalies').innerText = data.anomalies.length;
+                document.getElementById('stat-healings').innerText = data.healingEvents.length;
+                document.getElementById('stat-availability').innerText = Number(data.availability).toFixed(1) + '%';
+
+                const now = new Date().toLocaleTimeString();
+                if (timeLabels.length > MAX_POINTS) {
+                    timeLabels.shift(); cpuData.shift(); memData.shift(); latData.shift(); errData.shift();
+                }
+                timeLabels.push(now);
+                cpuData.push(data.currentCpu);
+                memData.push(data.currentMem);
+                latData.push(data.currentLatency);
+                errData.push(data.currentErrorRate);
+
+                cpuChart.data.datasets[0].data = cpuData; cpuChart.update();
+                memChart.data.datasets[0].data = memData; memChart.update();
+                latChart.data.datasets[0].data = latData; latChart.update();
+                errChart.data.datasets[0].data = errData; errChart.update();
+
+            } catch (err) {
+                console.error("Dashboard pull failed", err);
+            }
+        }
+
+        setInterval(fetchSystemStatus, 3000);
+        fetchSystemStatus();
+    </script>
+</body>
+</html>

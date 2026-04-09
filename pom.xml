@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.autoheal</groupId>
+    <artifactId>autoheal-j-root</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>AutoHeal-J Component Root</name>
+    <modules>
+        <module>services/user-service</module>
+        <module>services/order-service</module>
+        <module>services/payment-service</module>
+        <module>services/gateway-service</module>
+        <module>dashboard-service</module>
+    </modules>
+</project>

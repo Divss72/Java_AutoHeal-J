@@ -1,0 +1,26 @@
+[2026-03-31 22:01:48] === Phase 1: Validating System ===
+[2026-03-31 22:02:39] [WARNING] kubectl failed: Command 'kubectl get pods -A' timed out after 15 seconds. Falling back to LOCAL mode assumption.
+[2026-03-31 22:02:39] === Phase 2: Warm-Up Phase (30s) ===
+[2026-03-31 22:02:49] Warm-Up ... 10/30 seconds elapsed
+[2026-03-31 22:02:59] Warm-Up ... 20/30 seconds elapsed
+[2026-03-31 22:03:09] Warm-Up ... 30/30 seconds elapsed
+[2026-03-31 22:09:21] Warm-Up Complete. Verifying Prometheus Metrics...
+[2026-03-31 22:09:41] Post-Warmup Metrics -> Latency: 0.0000s, ErrorRate: 0.0000, CPU: 0.0000, Mem: 0.00MB, Tpt: 0.00rps
+[2026-03-31 22:09:41] [WARNING] Metrics are 0. Prometheus port-forward might be down or no load generated.
+[2026-03-31 22:09:41] === Starting Scenario: CRASH ===
+[2026-03-31 22:10:56] [ERROR] Could not trigger crash. Is service reachable?
+[2026-03-31 22:16:44] [TIMEOUT] Scenario crash did not recover within 300s.
+[2026-03-31 22:17:14] Cooling down 30s before next scenario...
+[2026-03-31 22:17:44] === Starting Scenario: CPU ===
+[2026-03-31 22:18:59] [ERROR] Could not trigger cpu. Is service reachable?
+[2026-03-31 22:24:46] [TIMEOUT] Scenario cpu did not recover within 300s.
+[2026-03-31 22:25:17] Cooling down 30s before next scenario...
+[2026-03-31 22:25:47] === Starting Scenario: MEMORY ===
+[2026-03-31 22:27:02] [ERROR] Could not trigger memory. Is service reachable?
+[2026-03-31 22:32:49] [TIMEOUT] Scenario memory did not recover within 300s.
+[2026-03-31 22:33:19] Cooling down 30s before next scenario...
+[2026-03-31 22:33:49] === Starting Scenario: LATENCY ===
+[2026-03-31 22:35:04] [ERROR] Could not trigger latency. Is service reachable?
+[2026-03-31 22:40:51] [TIMEOUT] Scenario latency did not recover within 300s.
+[2026-03-31 22:41:21] Cooling down 30s before next scenario...
+[2026-03-31 22:41:51] === Generating Outputs ===

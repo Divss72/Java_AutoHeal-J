@@ -1,0 +1,25 @@
+# Logs
+*.log
+*.err
+build_output*
+
+# IDE and Project
+.idea/
+*.iml
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Java
+target/
+*.class
+
+# Tools
+tools/

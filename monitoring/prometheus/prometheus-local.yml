@@ -1,0 +1,37 @@
+global:
+  scrape_interval: 5s # Faster scraping for local testing
+
+scrape_configs:
+  - job_name: 'microservices'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: 
+        - 'localhost:8081' # user-service
+        - 'localhost:8082' # order-service
+        - 'localhost:8083' # payment-service
+        - 'localhost:8080' # gateway-service
+        - 'localhost:8085' # dashboard-service
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: application
+        regex: 'localhost:8081'
+        replacement: 'user-service'
+      - source_labels: [__address__]
+        target_label: application
+        regex: 'localhost:8082'
+        replacement: 'order-service'
+      - source_labels: [__address__]
+        target_label: application
+        regex: 'localhost:8083'
+        replacement: 'payment-service'
+      - source_labels: [__address__]
+        target_label: application
+        regex: 'localhost:8080'
+        replacement: 'gateway-service'
+      - source_labels: [__address__]
+        target_label: application
+        regex: 'localhost:8085'
+        replacement: 'autoheal-dashboard-service'
+      # Backup label for dashboard compatibility
+      - source_labels: [application]
+        target_label: service_name

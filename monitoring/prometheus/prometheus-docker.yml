@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  - job_name: 'microservices'
+    static_configs:
+      - targets: 
+        - 'user-service:8081'
+        - 'order-service:8082'
+        - 'payment-service:8083'
+        - 'gateway-service:8080'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: service_name
+        regex: '([^:]+):.*'
+        replacement: '$1'
+      # Mimic Kubernetes pod name label for compatibility with anomaly engine
+      - source_labels: [__address__]
+        target_label: kubernetes_pod_name
+        regex: '([^:]+):.*'
+        replacement: '$1'

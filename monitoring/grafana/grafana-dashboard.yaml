@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-json
+  namespace: default
+data:
+  microservices-dashboard.json: |-
+    {
+      "title": "Spring Boot Microservices Observability",
+      "panels": [
+        {
+          "title": "CPU Usage (App Level)",
+          "type": "timeseries",
+          "targets": [{"expr": "system_cpu_usage", "legendFormat": "{{app}} ({{kubernetes_pod_name}})"}],
+          "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8}
+        },
+        {
+          "title": "JVM Memory Used Bytes",
+          "type": "timeseries",
+          "targets": [{"expr": "jvm_memory_used_bytes", "legendFormat": "{{app}} ({{kubernetes_pod_name}})"}],
+          "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8}
+        },
+        {
+          "title": "Request Throughput (ops/sec)",
+          "type": "timeseries",
+          "targets": [{"expr": "rate(http_server_requests_seconds_count[1m])", "legendFormat": "{{app}}"}],
+          "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8}
+        },
+        {
+          "title": "HTTP Error Rate (ops/sec, 5xx)",
+          "type": "timeseries",
+          "targets": [{"expr": "rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])", "legendFormat": "{{app}}"}],
+          "gridPos": {"x": 12, "y": 8, "w": 6, "h": 8}
+        },
+        {
+          "title": "HTTP Request Latency (avg seconds)",
+          "type": "timeseries",
+          "targets": [{"expr": "rate(http_server_requests_seconds_sum[1m]) / rate(http_server_requests_seconds_count[1m])", "legendFormat": "{{app}}"}],
+          "gridPos": {"x": 18, "y": 8, "w": 6, "h": 8}
+        }
+      ]
+    }

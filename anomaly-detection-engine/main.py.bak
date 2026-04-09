@@ -1,0 +1,93 @@
+import os
+import time
+import requests
+import numpy as np
+import logging
+from sklearn.ensemble import IsolationForest
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("anomaly-detection-engine")
+
+PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
+HEALING_ENGINE_URL = os.getenv("HEALING_ENGINE_URL", "http://healing-engine:5000/alert")
+QUERY_ENDPOINT = f"{PROMETHEUS_URL}/api/v1/query"
+POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "15"))
+CONTAMINATION = float(os.getenv("CONTAMINATION", "0.1"))
+
+SERVICES = ["user-service", "order-service", "payment-service", "gateway-service"]
+
+METRICS_TEMPLATE = {
+    "cpu_usage": "system_cpu_usage{{kubernetes_pod_name=~'{service}.*'}}",
+    "memory_usage": "jvm_memory_used_bytes{{kubernetes_pod_name=~'{service}.*'}}",
+    "throughput": "rate(http_server_requests_seconds_count{{kubernetes_pod_name=~'{service}.*'}}[1m])",
+    "error_rate": "rate(http_server_requests_seconds_count{{status=~'5..', kubernetes_pod_name=~'{service}.*'}}[1m])",
+    "latency": "rate(http_server_requests_seconds_sum{{kubernetes_pod_name=~'{service}.*'}}[1m]) / rate(http_server_requests_seconds_count{{kubernetes_pod_name=~'{service}.*'}}[1m])"
+}
+
+def fetch_metric(query):
+    try:
+        response = requests.get(QUERY_ENDPOINT, params={'query': query}, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        if data.get('status') == 'success' and data.get('data', {}).get('result'):
+            values = []
+            for result in data['data']['result']:
+                val_str = result['value'][1]
+                if val_str != 'NaN':
+                    values.append(float(val_str))
+            if values:
+                return sum(values) / len(values)
+    except Exception as e:
+        pass
+    return 0.0
+
+def main():
+    logger.info(f"Starting AI Engine. Prometheus: {PROMETHEUS_URL} | Healing Engine: {HEALING_ENGINE_URL}")
+    
+    models = {svc: IsolationForest(contamination=CONTAMINATION, random_state=42) for svc in SERVICES}
+    histories = {svc: [] for svc in SERVICES}
+    
+    while True:
+        for service in SERVICES:
+            metrics_vector = []
+            metrics_dict = {}
+            for name, query_tpl in METRICS_TEMPLATE.items():
+                query = query_tpl.format(service=service)
+                val = fetch_metric(query)
+                metrics_vector.append(val)
+                metrics_dict[name] = val
+            
+            metrics_vector = [0.0 if np.isnan(v) or np.isinf(v) else v for v in metrics_vector]
+            histories[service].append(metrics_vector)
+            
+            if len(histories[service]) > 2:
+                X = np.array(histories[service])
+                try:
+                    models[service].fit(X)
+                    latest = X[-1].reshape(1, -1)
+                    score = models[service].decision_function(latest)[0]
+                    prediction = models[service].predict(latest)[0]
+                    
+                    if prediction == -1:
+                        logger.warning(f"ALERT: Anomaly in {service}! Score: {score:.3f}")
+                        payload = {"service": service, "metrics": metrics_dict, "score": float(score)}
+                        try:
+                            requests.post(HEALING_ENGINE_URL, json=payload, timeout=5)
+                            logger.info(f"Healing alert sent for {service}")
+                        except Exception as e:
+                            logger.error(f"Failed to reach healing engine: {e}")
+                    else:
+                        logger.debug(f"{service} normal. Score: {score:.3f}")
+                        
+                except Exception as e:
+                    logger.error(f"Error during IF fitting/prediction for {service}: {e}")
+                
+                if len(histories[service]) > 500:
+                    histories[service].pop(0)
+            else:
+                logger.info(f"Collecting baseline for {service}... ({len(histories[service])}/3)")
+
+        time.sleep(POLL_INTERVAL)
+
+if __name__ == "__main__":
+    main()

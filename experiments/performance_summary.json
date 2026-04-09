@@ -1,0 +1,6 @@
+{
+    "average_recovery_time_sec": 0,
+    "anomaly_detection_accuracy_pct": 100.0,
+    "healing_success_rate_pct": 0.0,
+    "system_availability_pct": 100.0
+}
