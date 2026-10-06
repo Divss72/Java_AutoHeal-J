@@ -10,6 +10,9 @@ import time
 import requests
 import numpy as np
 import logging
+import hmac
+import hashlib
+import json
 from sklearn.ensemble import IsolationForest as AbstractDetector
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -20,6 +23,23 @@ HEALING_ENGINE_URL = os.getenv("HEALING_ENGINE_URL", "http://localhost:5000/aler
 DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:8085")
 QUERY_ENDPOINT = f"{PROMETHEUS_URL}/api/v1/query"
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "5"))
+WEBHOOK_SECRET = os.getenv("AUTOHEAL_WEBHOOK_SECRET", "autoheal-webhook-hmac-secret-token")
+
+def send_signed_webhook(url, payload):
+    try:
+        body_str = json.dumps(payload, separators=(',', ':'))
+        body_bytes = body_str.encode('utf-8')
+        timestamp = str(int(time.time()))
+        message = f"{timestamp}.".encode('utf-8') + body_bytes
+        signature = hmac.new(WEBHOOK_SECRET.encode('utf-8'), message, hashlib.sha256).hexdigest()
+        headers = {
+            "Content-Type": "application/json",
+            "X-AutoHeal-Signature": f"sha256={signature}",
+            "X-AutoHeal-Timestamp": timestamp
+        }
+        requests.post(url, data=body_str, headers=headers, timeout=5)
+    except Exception as e:
+        logger.debug(f"Webhook dispatch failed to {url}: {e}")
 
 ALPHA = float(os.getenv("CONTAMINATION", "0.05"))
 TRACKED_ENTITIES = ["user-service", "order-service", "payment-service", "gateway-service"]
@@ -89,11 +109,8 @@ def main():
                         logger.warning(f"CRITICAL STATE EXCEPTION: {entity} down for {down_pulse_counts[entity] * POLL_INTERVAL}s. Initiating safety protocol...")
                         payload = {"service": entity, "metrics": str(v_dict), "score": -1.0, "type": "PRIMARY_INFRA_FAILURE"}
                         last_alert_time[entity] = now
-                        try:
-                            requests.post(HEALING_ENGINE_URL, json=payload, timeout=5)
-                            requests.post(f"{DASHBOARD_URL}/api/webhook/anomaly", json=payload, timeout=5)
-                        except Exception:
-                            pass
+                        send_signed_webhook(HEALING_ENGINE_URL, payload)
+                        send_signed_webhook(f"{DASHBOARD_URL}/api/webhook/anomaly", payload)
                 else:
                     logger.info(f"Transient pulse drop observed for {entity} ({down_pulse_counts[entity]}/3)...")
                 continue
@@ -121,11 +138,8 @@ def main():
                                 logger.warning(f"THRESHOLD EXCEEDED: Anomaly confirmed for {entity}. Deviation: {deviation_score:.3f}")
                                 payload = {"service": entity, "metrics": str(v_dict), "score": float(deviation_score), "type": "HEURISTIC_ANOMALY"}
                                 last_alert_time[entity] = now
-                                try:
-                                    requests.post(HEALING_ENGINE_URL, json=payload, timeout=5)
-                                    requests.post(f"{DASHBOARD_URL}/api/webhook/anomaly", json=payload, timeout=5)
-                                except Exception:
-                                    pass
+                                send_signed_webhook(HEALING_ENGINE_URL, payload)
+                                send_signed_webhook(f"{DASHBOARD_URL}/api/webhook/anomaly", payload)
                     else:
                         anomaly_streak_counts[entity] = 0
                 except Exception:
