@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -19,6 +20,7 @@ import java.security.MessageDigest;
  * to prevent side-channel timing attacks.
  */
 @Component
+@Order(1)
 public class ChaosSecurityFilter extends OncePerRequestFilter {
 
     @Value("${autoheal.security.admin-token:autoheal-secure-admin-token}")
