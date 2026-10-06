@@ -45,12 +45,12 @@ ALPHA = float(os.getenv("CONTAMINATION", "0.05"))
 TRACKED_ENTITIES = ["user-service", "order-service", "payment-service", "gateway-service"]
 
 DATA_VECTOR_TEMPLATES = {
-    "v1": "up{{application='{service}'}}",
-    "v2": "system_cpu_usage{{application='{service}'}}",
-    "v3": "jvm_memory_used_bytes{{application='{service}'}}",
-    "v4": "rate(http_server_requests_seconds_count{{application='{service}'}}[1m])",
-    "v5": "rate(http_server_requests_seconds_count{{status=~'5..', application='{service}'}}[1m])",
-    "v6": "rate(http_server_requests_seconds_sum{{application='{service}'}}[1m]) / rate(http_server_requests_seconds_count{{application='{service}'}}[1m])"
+    "v1": "max(up{{app='{service}'}} or up{{application='{service}'}})",
+    "v2": "max(system_cpu_usage{{app='{service}'}} or system_cpu_usage{{application='{service}'}})",
+    "v3": "sum(jvm_memory_used_bytes{{app='{service}'}} or jvm_memory_used_bytes{{application='{service}'}})",
+    "v4": "sum(rate(http_server_requests_seconds_count{{app='{service}'}}[1m]) or rate(http_server_requests_seconds_count{{application='{service}'}}[1m]))",
+    "v5": "sum(rate(http_server_requests_seconds_count{{status=~'5..', app='{service}'}}[1m]) or rate(http_server_requests_seconds_count{{status=~'5..', application='{service}'}}[1m]))",
+    "v6": "(sum(rate(http_server_requests_seconds_sum{{app='{service}'}}[1m]) or rate(http_server_requests_seconds_sum{{application='{service}'}}[1m]))) / (sum(rate(http_server_requests_seconds_count{{app='{service}'}}[1m]) or rate(http_server_requests_seconds_count{{application='{service}'}}[1m])))"
 }
 
 def retrieve_telemetry(query):

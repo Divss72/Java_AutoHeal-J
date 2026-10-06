@@ -1,0 +1,268 @@
+{
+  "info": {
+    "name": "AutoHeal-J API Suite",
+    "description": "Complete Postman collection for AutoHeal-J microservices, API Gateway resilience, security filters, and dashboard.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. API Gateway & Resilience",
+      "item": [
+        {
+          "name": "Gateway Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/gateway/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "gateway", "status"]
+            }
+          }
+        },
+        {
+          "name": "Gateway Resilience Telemetry (RateLimiter & Bulkhead)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/gateway/resilience/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "gateway", "resilience", "status"]
+            }
+          }
+        },
+        {
+          "name": "Gateway Actuator Health (Whitelisted Probe)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/actuator/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["actuator", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Downstream Routed Microservices",
+      "item": [
+        {
+          "name": "Get Users (User Service via Gateway)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/users",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get Orders (Order Service via Gateway)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Payments (Payment Service via Gateway)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/payments",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "payments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Security & Chaos Simulation",
+      "item": [
+        {
+          "name": "Chaos Latency - Unauthenticated (Expect 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/simulate/latency",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["simulate", "latency"]
+            }
+          }
+        },
+        {
+          "name": "Chaos Latency - Authenticated (Expect 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-AutoHeal-Admin-Token",
+                "value": "autoheal-secure-admin-token",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/simulate/latency",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["simulate", "latency"]
+            }
+          }
+        },
+        {
+          "name": "Chaos CPU Spike - Authenticated (Expect 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-AutoHeal-Admin-Token",
+                "value": "autoheal-secure-admin-token",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/simulate/cpu",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["simulate", "cpu"]
+            }
+          }
+        },
+        {
+          "name": "Chaos Memory Leak - Authenticated (Expect 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-AutoHeal-Admin-Token",
+                "value": "autoheal-secure-admin-token",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/simulate/memory",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["simulate", "memory"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. AutoHeal Dashboard & Webhooks",
+      "item": [
+        {
+          "name": "Dashboard Telemetry Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8085/api/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8085",
+              "path": ["api", "status"]
+            }
+          }
+        },
+        {
+          "name": "Dashboard Microservices Health Map",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8085/api/services",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8085",
+              "path": ["api", "services"]
+            }
+          }
+        },
+        {
+          "name": "Trigger Service Control Action (e.g. CPU on Order Service)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8085/api/control/cpu/order-service",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8085",
+              "path": ["api", "control", "cpu", "order-service"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Prometheus Metrics Explorer",
+      "item": [
+        {
+          "name": "Prometheus Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:9090/-/healthy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "9090",
+              "path": ["-", "healthy"]
+            }
+          }
+        },
+        {
+          "name": "Query Active Nodes (up metric)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:9090/api/v1/query?query=up",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "9090",
+              "path": ["api", "v1", "query"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "up"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
