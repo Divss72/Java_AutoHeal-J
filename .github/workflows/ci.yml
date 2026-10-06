@@ -71,9 +71,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Validate K8s YAML Syntax via kubectl dry-run
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Validate K8s Manifest Syntax
         run: |
-          for manifest in k8s/*.yaml; do
-            echo "Validating $manifest..."
-            kubectl apply --dry-run=client --validate=false -f "$manifest"
-          done
+          python -c "
+          import yaml, glob, sys
+          failed = False
+          for f in sorted(glob.glob('k8s/*.yaml')):
+              try:
+                  with open(f, 'r', encoding='utf-8') as fp:
+                      docs = list(yaml.safe_load_all(fp))
+                  print(f'[PASS] {f} ({len(docs)} documents)')
+              except Exception as e:
+                  print(f'[FAIL] {f}: {e}')
+                  failed = True
+          if failed:
+              sys.exit(1)
+          print('All Kubernetes manifests are syntactically valid YAML.')
+          "

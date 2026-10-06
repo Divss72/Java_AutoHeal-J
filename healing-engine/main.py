@@ -10,6 +10,9 @@ import time
 import datetime
 import logging
 import requests
+import hmac
+import hashlib
+import json
 from flask import Flask, request, jsonify
 from kubernetes import client, config
 
@@ -20,6 +23,7 @@ app = Flask(__name__)
 
 # Dashboard URL for reporting
 DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:8085")
+WEBHOOK_SECRET = os.getenv("AUTOHEAL_WEBHOOK_SECRET", "autoheal-webhook-hmac-secret-token")
 
 # Allowed services whitelist (Security Hardening: Prevents Command Injection / Arbitrary Targeting)
 ALLOWED_SERVICES = {"user-service", "order-service", "payment-service", "gateway-service", "autoheal-dashboard-service"}
@@ -65,7 +69,17 @@ def notify_dashboard(service, action, success):
             "success": success,
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         }
-        requests.post(f"{DASHBOARD_URL}/api/webhook/healing", json=payload, timeout=5)
+        body_str = json.dumps(payload, separators=(',', ':'))
+        body_bytes = body_str.encode('utf-8')
+        timestamp = str(int(time.time()))
+        message = f"{timestamp}.".encode('utf-8') + body_bytes
+        signature = hmac.new(WEBHOOK_SECRET.encode('utf-8'), message, hashlib.sha256).hexdigest()
+        headers = {
+            "Content-Type": "application/json",
+            "X-AutoHeal-Signature": f"sha256={signature}",
+            "X-AutoHeal-Timestamp": timestamp
+        }
+        requests.post(f"{DASHBOARD_URL}/api/webhook/healing", data=body_str, headers=headers, timeout=5)
     except Exception as e:
         logger.error(f"Failed to notify dashboard: {e}")
 
@@ -75,6 +89,29 @@ def health():
 
 @app.route('/alert', methods=['POST'])
 def receive_alert():
+    signature_header = request.headers.get("X-AutoHeal-Signature")
+    timestamp_header = request.headers.get("X-AutoHeal-Timestamp")
+
+    if not signature_header or not timestamp_header:
+        logger.warning("SECURITY ALERT: Rejected unsigned alert webhook (missing signature or timestamp)")
+        return jsonify({"status": "rejected", "error": "Missing X-AutoHeal-Signature or X-AutoHeal-Timestamp header"}), 401
+
+    try:
+        req_time = int(timestamp_header)
+        if abs(time.time() - req_time) > 300:
+            logger.warning("SECURITY ALERT: Rejected expired alert timestamp")
+            return jsonify({"status": "rejected", "error": "Expired timestamp"}), 401
+    except ValueError:
+        return jsonify({"status": "rejected", "error": "Invalid timestamp format"}), 401
+
+    raw_body = request.get_data()
+    message = f"{timestamp_header}.".encode('utf-8') + raw_body
+    expected_sig = "sha256=" + hmac.new(WEBHOOK_SECRET.encode('utf-8'), message, hashlib.sha256).hexdigest()
+
+    if not hmac.compare_digest(expected_sig, signature_header):
+        logger.warning("SECURITY ALERT: Invalid HMAC signature on alert webhook")
+        return jsonify({"status": "rejected", "error": "Invalid HMAC signature"}), 401
+
     data = request.json or {}
     logger.info(f"Raw Alert Payload: {data}")
     service_name = data.get("service", "unknown-service")
