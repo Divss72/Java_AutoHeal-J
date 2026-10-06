@@ -1,11 +1,5 @@
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw
-# Resolve dependencies first to cache them
-RUN ./mvnw dependency:go-offline -B
-COPY src ./src
-RUN ./mvnw clean package -DskipTests
+COPY target/autoheal-dashboard-service-*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "target/autoheal-dashboard-service-1.0.0.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -1,541 +1,1613 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutoHeal-J Command Center</title>
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js for graphs -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* ============================================================
+           1. BAUHAUS LIGHT EDITORIAL DESIGN SYSTEM TOKENS
+           ============================================================ */
         :root {
-            --bg-dark: #0f172a;
-            --bg-panel: rgba(30, 41, 59, 0.7);
-            --bg-card: rgba(15, 23, 42, 0.6);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --accent-yellow: #f59e0b;
-            --glass-blur: blur(12px);
+            --bg-primary: #F5F6F1;
+            --bg-secondary: #EEF1EC;
+            --surface: #FFFFFF;
+            --text-primary: #17221E;
+            --text-secondary: #68736E;
+            --text-muted: #8E9994;
+            --border-main: #D5DDD7;
+            --border-subtle: #E6EBE7;
+
+            /* Brand & Accents (Light, Muted Bauhaus Palette) */
+            --forest-green: #176B4D;
+            --soft-green: #DCEDE5;
+            --pale-green: #EDF6F1;
+
+            --muted-yellow: #E9B949;
+            --soft-yellow: #FFF3D2;
+
+            --muted-purple: #9B8BC4;
+            --soft-lavender: #EEEAF7;
+
+            --muted-cyan: #68B7AD;
+            --soft-cyan: #E3F2EF;
+
+            --muted-red: #E66A6A;
+            --soft-red: #FBE8E7;
+
+            --radius-card: 6px;
+            --radius-sm: 4px;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            --transition: all 140ms ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            background-image: radial-gradient(circle at 10% 20%, #1e3a8a 0%, transparent 40%),
-                              radial-gradient(circle at 90% 80%, #064e3b 0%, transparent 40%);
-            background-attachment: fixed;
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
+            padding: 32px 48px 56px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
 
-        h1, h2, h3, h4, h5 { margin-top: 0; }
-        
+        .dashboard-container {
+            max-width: 1720px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .font-mono { font-family: var(--font-mono); }
+
+        .tech-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        /* ============================================================
+           2. FULL-WIDTH TOP HEADER (NO SIDEBAR BUTTONS)
+           ============================================================ */
         .header {
+            background-color: var(--surface);
+            border: 1px solid var(--border-main);
+            border-radius: var(--radius-card);
+            padding: 22px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            padding: 20px;
-            background: var(--bg-panel);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .header h1 {
-            font-size: 1.8rem;
-            background: -webkit-linear-gradient(45deg, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0;
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
 
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
+        .brand-logo-mark {
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+        }
+
+        .brand-titles h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        .brand-titles .subtitle {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 2px;
+        }
+
+        .brand-titles .subtitle span {
+            color: var(--border-main);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        /* Top Abstract Bauhaus Artwork */
+        .header-bauhaus-svg {
+            width: 130px;
+            height: 38px;
+        }
+
+        .clock-box {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .clock-date {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .clock-time {
+            font-size: 1.0625rem;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+
+        /* Clean System Status Pill */
+        .status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--accent-green);
-            border: 1px solid rgba(16, 185, 129, 0.4);
-            transition: 0.3s;
+            gap: 10px;
+            padding: 8px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            background-color: var(--pale-green);
+            color: var(--forest-green);
+            border: 1px solid var(--soft-green);
+            transition: var(--transition);
         }
 
         .status-badge .dot {
             width: 8px;
             height: 8px;
-            background-color: var(--accent-green);
+            background-color: var(--forest-green);
             border-radius: 50%;
-            animation: pulse-green 2s infinite;
         }
 
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        .status-badge.degraded {
+            background-color: var(--soft-red);
+            color: var(--muted-red);
+            border-color: #F5D3D1;
         }
 
-        .grid-container {
+        .status-badge.degraded .dot {
+            background-color: var(--muted-red);
+        }
+
+        /* ============================================================
+           3. DASHBOARD MAIN GRID (24PX GENEROUS GAP)
+           ============================================================ */
+        .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+
+        .col-12 { grid-column: span 12; }
+        .col-3  { grid-column: span 3; }
+        .col-6  { grid-column: span 6; }
+
+        /* Panel Container with Generous Whitespace */
+        .panel {
+            background-color: var(--surface);
+            border: 1px solid var(--border-main);
+            border-radius: var(--radius-card);
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
             gap: 20px;
         }
 
-        .panel {
-            background: var(--bg-panel);
-            -webkit-backdrop-filter: var(--glass-blur);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
         .panel-header {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #cbd5e1;
             display: flex;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-        }
-
-        .col-span-3 { grid-column: span 3; }
-        .col-span-4 { grid-column: span 4; }
-        .col-span-6 { grid-column: span 6; }
-        .col-span-8 { grid-column: span 8; }
-        .col-span-9 { grid-column: span 9; }
-        .col-span-12 { grid-column: span 12; }
-
-        @media (max-width: 1200px) {
-            .col-span-3, .col-span-4 { grid-column: span 6; }
-            .col-span-8, .col-span-9 { grid-column: span 12; }
-            .service-grid { grid-template-columns: repeat(2, 1fr) !important; }
-        }
-        @media (max-width: 768px) {
-            .col-span-3, .col-span-4, .col-span-6, .col-span-8, .col-span-9 { grid-column: span 12; }
-            .service-grid { grid-template-columns: 1fr !important; }
-        }
-
-        .stat-card {
-            text-align: center;
-            padding: 15px;
-            background: var(--bg-card);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-        }
-
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-top: 10px;
-            color: var(--text-main);
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Lists & Timeline */
-        .data-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .data-list::-webkit-scrollbar { width: 6px; }
-        .data-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-        .data-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
-
-        .list-item {
-            padding: 15px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            animation: slideIn 0.3s ease-out forwards;
-        }
-        .list-item:last-child { border-bottom: none; }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .item-header {
-            display: flex;
             justify-content: space-between;
-            font-size: 0.9rem;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
-        .timestamp { font-family: monospace; color: var(--text-muted); font-size: 0.85rem; }
-        
-        .badge {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
+        .panel-title {
+            font-size: 0.9375rem;
             font-weight: 600;
-            text-transform: uppercase;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .badge-error { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
-        .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--accent-yellow); border: 1px solid rgba(245, 158, 11, 0.3); }
-        .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
-        .badge-info { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
-
-        .service-name { font-weight: 600; color: #cbd5e1; }
-        
-        /* Service Cards */
-        .service-grid {
+        /* ============================================================
+           4. MICROSERVICE FLEET (TOP FULL-WIDTH — CLEAN, NO BUTTON NOISE)
+           ============================================================ */
+        .services-row-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
         }
-        
+
         .service-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-main);
+            border-radius: var(--radius-card);
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: var(--transition);
+        }
+
+        .service-card:hover {
+            border-color: #B2BEB6;
+            background-color: var(--surface);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+        }
+
+        .service-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .service-identity {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .service-geo-mark {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .service-name {
+            font-family: var(--font-mono);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .service-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .service-status-pill .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .status-healthy { color: var(--forest-green); }
+        .status-healthy .dot { background-color: var(--forest-green); }
+
+        .status-degraded { color: var(--muted-yellow); }
+        .status-degraded .dot { background-color: var(--muted-yellow); }
+
+        .status-crashed { color: var(--muted-red); }
+        .status-crashed .dot { background-color: var(--muted-red); }
+
+        .status-recovering { color: var(--muted-cyan); }
+        .status-recovering .dot { background-color: var(--muted-cyan); }
+
+        /* 2x2 Metrics with larger typography and whitespace */
+        .service-metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 18px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .metric-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .metric-cell .label {
+            font-size: 0.6875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .metric-cell .val {
+            font-family: var(--font-mono);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Sparkline mini container */
+        .service-sparkline-wrap {
+            height: 32px;
+            width: 100%;
+            background-color: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+        .sparkline-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Clean Contextual Footer (NO USELESS BUTTON CLUTTER) */
+        .service-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .service-action-quick {
+            background: none;
+            border: 1px solid var(--border-main);
+            background-color: var(--surface);
+            color: var(--text-primary);
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+        .service-action-quick:hover {
+            border-color: var(--forest-green);
+            color: var(--forest-green);
+            background-color: var(--pale-green);
+        }
+
+        .menu-wrap {
+            position: relative;
+        }
+
+        .menu-trigger {
+            background: none;
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1;
+            transition: var(--transition);
+        }
+
+        .menu-trigger:hover,
+        .menu-trigger.active {
+            border-color: var(--border-main);
+            background-color: var(--surface);
+            color: var(--text-primary);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 32px;
+            background-color: var(--surface);
+            border: 1px solid var(--border-main);
+            border-radius: var(--radius-card);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            width: 196px;
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            padding: 6px 0;
+        }
+
+        .dropdown-menu.show {
+            display: flex;
+        }
+
+        .dropdown-item {
+            background: none;
+            border: none;
+            padding: 8px 14px;
+            text-align: left;
+            font-family: inherit;
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--pale-green);
+            color: var(--forest-green);
+        }
+
+        .dropdown-item.danger:hover {
+            background-color: var(--soft-red);
+            color: var(--muted-red);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: var(--border-subtle);
+            margin: 4px 0;
+        }
+
+        /* ============================================================
+           5. PERFORMANCE SUMMARY (BOTTOM-LEFT — ENLARGED NUMBERS)
+           ============================================================ */
+        .kpi-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            height: 100%;
+            justify-content: space-between;
+        }
+
+        .kpi-box {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .kpi-box-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kpi-num-row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .kpi-num {
+            font-family: var(--font-mono);
+            font-size: 2.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.05;
+        }
+
+        .kpi-sub-trend {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--forest-green);
+        }
+
+        .kpi-micro-track {
+            height: 5px;
+            width: 100%;
+            background-color: var(--border-subtle);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .kpi-micro-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* ============================================================
+           6. LIVE TELEMETRY (BOTTOM-CENTER — ENLARGED CHARTS 160PX)
+           ============================================================ */
+        .charts-2x2-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .chart-box {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 16px 18px;
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
-        
-        .service-card h3 { margin: 0; font-size: 1.1rem; color: #f8fafc; }
-        
-        .service-metrics {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            font-size: 0.85rem;
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chart-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chart-chip {
+            width: 10px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .chart-val {
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .chart-canvas-wrapper {
+            position: relative;
+            height: 160px;
+            width: 100%;
+        }
+
+        /* ============================================================
+           7. EVENT TIMELINE (BOTTOM-RIGHT — GENEROUS SPACING)
+           ============================================================ */
+        .timeline-scroll-box {
+            max-height: 440px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .timeline-track {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .timeline-track::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 6px;
+            bottom: 6px;
+            width: 1px;
+            background-color: var(--border-main);
+        }
+
+        .timeline-entry {
+            position: relative;
+            margin-bottom: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: var(--transition);
+        }
+
+        .timeline-entry:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-entry:hover {
+            transform: translateX(2px);
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -20px;
+            top: 5px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--surface);
+            border: 2px solid var(--forest-green);
+            z-index: 2;
+        }
+
+        .timeline-dot.anomaly { border-color: var(--muted-red); }
+        .timeline-dot.healing { border-color: var(--muted-cyan); }
+        .timeline-dot.warning { border-color: var(--muted-yellow); }
+        .timeline-dot.recovery { border-color: var(--forest-green); }
+
+        .timeline-entry-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .entry-time {
+            font-family: var(--font-mono);
+            font-size: 0.6875rem;
             color: var(--text-muted);
         }
-        .service-metrics span { color: #fff; font-weight: 500; }
-        
-        .control-panel {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: auto;
+
+        .entry-tag {
+            font-size: 0.625rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 2px;
         }
-        
-        .control-panel button {
-            padding: 8px 10px;
-            border: none;
-            border-radius: 6px;
+
+        .tag-anom { background-color: var(--soft-red); color: var(--muted-red); }
+        .tag-heal { background-color: var(--soft-cyan); color: var(--muted-cyan); }
+        .tag-warn { background-color: var(--soft-yellow); color: var(--muted-yellow); }
+        .tag-reco { background-color: var(--pale-green); color: var(--forest-green); }
+
+        .entry-service {
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
             font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .entry-text {
             font-size: 0.75rem;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.2s;
+            color: var(--text-secondary);
+            line-height: 1.35;
         }
 
-        .btn-red { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .btn-red:hover { background: rgba(239, 68, 68, 0.3); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
-        
-        .btn-blue { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .btn-blue:hover { background: rgba(59, 130, 246, 0.3); box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
-        
-        .btn-yellow { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
-        .btn-yellow:hover { background: rgba(245, 158, 11, 0.3); }
-
-        .btn-full { grid-column: span 2; }
-
-        .chart-container { position: relative; height: 200px; width: 100%; }
-        .flex-col-gap { display: flex; flex-direction: column; gap: 15px; }
-        .grid-gap-15 { display: grid; gap: 15px; }
-
-        .demo-mode-btn {
-            background: linear-gradient(45deg, #8b5cf6, #3b82f6);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-            transition: 0.3s;
+        /* ============================================================
+           8. AUTOHEAL PIPELINE BANNER (BOTTOM FULL-WIDTH)
+           ============================================================ */
+        .pipeline-bar {
+            background-color: var(--surface);
+            border: 1px solid var(--border-main);
+            border-radius: var(--radius-card);
+            padding: 16px 26px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
         }
-        .demo-mode-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+
+        .pipeline-track-inline {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 1;
+        }
+
+        .pipeline-step {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            transition: var(--transition);
+        }
+
+        .pipeline-step.active {
+            border-color: var(--forest-green);
+            background-color: var(--pale-green);
+        }
+
+        .step-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step-info {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.25;
+        }
+
+        .step-title {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .step-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .step-sep {
+            color: var(--border-main);
+            font-size: 0.875rem;
+            user-select: none;
+        }
+
+        /* Toast Feedback */
+        #toast-container {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .toast-msg {
+            background-color: var(--surface);
+            border: 1px solid var(--border-main);
+            border-left: 3px solid var(--forest-green);
+            border-radius: var(--radius-sm);
+            padding: 12px 18px;
+            font-size: 0.8125rem;
+            color: var(--text-primary);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            animation: toastIn 180ms ease forwards;
+        }
+
+        .toast-msg.error {
+            border-left-color: var(--muted-red);
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1300px) {
+            .services-row-grid { grid-template-columns: repeat(2, 1fr); }
+            .col-3 { grid-column: span 6; }
+            .col-6 { grid-column: span 12; }
+            .pipeline-track-inline { flex-direction: column; align-items: stretch; }
+            .step-sep { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 18px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .header-right { width: 100%; justify-content: space-between; }
+            .services-row-grid { grid-template-columns: 1fr; }
+            .charts-2x2-grid { grid-template-columns: 1fr; }
+            .col-3, .col-6, .col-12 { grid-column: span 12; }
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>AutoHeal-J Command Center</h1>
-        <!-- 
-        <button class="demo-mode-btn" onclick="startDemoMode()">Start Demo Flow</button>
-        -->
-        <div class="status-badge" id="main-status-badge">
-            <div class="dot" id="system-dot"></div>
-            System Status: <span id="system-status-text">HEALTHY</span>
-        </div>
-    </div>
+<div class="dashboard-container">
 
-    <div class="grid-container">
-
-        <!-- Microservice Visibility Panel -->
-        <div class="panel col-span-12">
-            <div class="panel-header">Microservice Fleet Visibility & Control</div>
-            <div class="service-grid" id="services-container">
-                <!-- Populated natively via JS -->
-            </div>
-        </div>
-
-        <!-- System Overview Stats -->
-        <div class="panel col-span-3">
-            <div class="panel-header">Performance Summary</div>
-            <div class="flex-col-gap">
-                <div class="stat-card">
-                    <div class="stat-label">System Availability</div>
-                    <div class="stat-value" id="stat-availability">100.0%</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Active Load (RPS)</div>
-                    <div class="stat-value" id="stat-rps">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Total Anomalies</div>
-                    <div class="stat-value" style="color:var(--accent-yellow)" id="stat-anomalies">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Total Healings</div>
-                    <div class="stat-value" style="color:var(--accent-green)" id="stat-healings">0</div>
+    <!-- ============================================================
+         1. TOP HEADER (CLEAN BAUHAUS LIGHT THEME — NO SIDEBAR)
+         ============================================================ -->
+    <header class="header">
+        <div class="header-brand">
+            <svg class="brand-logo-mark" viewBox="0 0 32 32" fill="none">
+                <circle cx="12" cy="12" r="10" fill="#176B4D" />
+                <rect x="12" y="12" width="16" height="16" fill="#DCEDE5" stroke="#17221E" stroke-width="1.2" />
+                <line x1="2" y1="28" x2="30" y2="28" stroke="#17221E" stroke-width="1.5" />
+                <circle cx="20" cy="20" r="3" fill="#E9B949" />
+            </svg>
+            <div class="brand-titles">
+                <h1>AutoHeal-J Command Center</h1>
+                <div class="subtitle">
+                    Real-time microservice resilience
+                    <span>/</span>
+                    Autonomous fault recovery
                 </div>
             </div>
         </div>
 
-        <!-- Metrics Graph Panel -->
-        <div class="panel col-span-6">
-            <div class="panel-header">Live Telemetry</div>
-            <div class="grid-container grid-gap-15" style="grid-template-columns: 1fr 1fr;">
-                <div class="col-span-1"><div class="chart-container"><canvas id="cpuChart"></canvas></div></div>
-                <div class="col-span-1"><div class="chart-container"><canvas id="memChart"></canvas></div></div>
-                <div class="col-span-1"><div class="chart-container"><canvas id="latencyChart"></canvas></div></div>
-                <div class="col-span-1"><div class="chart-container"><canvas id="errorChart"></canvas></div></div>
+        <div class="header-right">
+            <!-- Bauhaus Geometric Header Composition -->
+            <svg class="header-bauhaus-svg" viewBox="0 0 130 38" fill="none">
+                <g fill="#D5DDD7">
+                    <circle cx="6" cy="8" r="1.5"/><circle cx="16" cy="8" r="1.5"/><circle cx="26" cy="8" r="1.5"/>
+                    <circle cx="6" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/><circle cx="26" cy="18" r="1.5"/>
+                    <circle cx="6" cy="28" r="1.5"/><circle cx="16" cy="28" r="1.5"/><circle cx="26" cy="28" r="1.5"/>
+                </g>
+                <path d="M 44 32 A 18 18 0 0 1 80 32 Z" fill="#DCEDE5" stroke="#176B4D" stroke-width="1.2" />
+                <circle cx="94" cy="14" r="6" fill="#FFF3D2" stroke="#E9B949" stroke-width="1" />
+                <line x1="38" y1="35" x2="128" y2="35" stroke="#17221E" stroke-width="1.2" />
+            </svg>
+
+            <!-- Live Clock -->
+            <div class="clock-box">
+                <span class="clock-date" id="live-date">Oct 7, 2026</span>
+                <span class="clock-time" id="live-time">04:58:00 AM</span>
+            </div>
+
+            <!-- System Status Badge -->
+            <div class="status-badge" id="main-status-badge">
+                <div class="dot" id="system-dot"></div>
+                System Status: <span id="system-status-text">HEALTHY</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================================
+         2. MAIN DASHBOARD CONTENT
+         ============================================================ -->
+    <div class="dashboard-grid">
+
+        <!-- ============================================================
+             SECTION A (TOP FULL WIDTH): MICROSERVICE FLEET VISIBILITY
+             ============================================================ -->
+        <div class="panel col-12">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="tech-label">FLEET VISIBILITY & CONTROL</span>
+                    <span>Microservice Fleet</span>
+                </div>
+                <span class="tech-label">4 ACTIVE SERVICES • KUBERNETES REPLICAS</span>
+            </div>
+
+            <div class="services-row-grid" id="services-container">
+                <!-- Populated dynamically via JS -->
             </div>
         </div>
 
-        <!-- Enhanced Event Timeline -->
-        <div class="panel col-span-3">
-            <div class="panel-header">Event Timeline</div>
-            <div class="data-list" id="timeline-list">
-                <div style="text-align: center; color: var(--text-muted); padding: 20px;">No events logged</div>
+        <!-- ============================================================
+             SECTION B (BOTTOM-LEFT): PERFORMANCE SUMMARY (KPIS)
+             ============================================================ -->
+        <div class="panel col-3">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="tech-label">KPIS</span>
+                    <span>Performance Summary</span>
+                </div>
+            </div>
+
+            <div class="kpi-stack">
+                <!-- KPI 1: System Availability -->
+                <div class="kpi-box">
+                    <div class="kpi-box-top">
+                        <span class="tech-label">SYSTEM AVAILABILITY</span>
+                        <span class="kpi-sub-trend" id="kpi-trend-avail">↑ 2.4%</span>
+                    </div>
+                    <div class="kpi-num-row">
+                        <span class="kpi-num" id="stat-availability">100.0%</span>
+                    </div>
+                    <div class="kpi-micro-track">
+                        <div class="kpi-micro-fill" id="kpi-bar-avail" style="width: 100%; background-color: var(--forest-green);"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 2: Active Load -->
+                <div class="kpi-box">
+                    <div class="kpi-box-top">
+                        <span class="tech-label">ACTIVE LOAD</span>
+                        <span class="tech-label" style="color: var(--text-muted);">STEADY</span>
+                    </div>
+                    <div class="kpi-num-row">
+                        <span class="kpi-num" id="stat-rps">0.0 RPS</span>
+                    </div>
+                    <div class="kpi-micro-track">
+                        <div class="kpi-micro-fill" id="kpi-bar-rps" style="width: 12%; background-color: var(--muted-cyan);"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Total Anomalies -->
+                <div class="kpi-box">
+                    <div class="kpi-box-top">
+                        <span class="tech-label">TOTAL ANOMALIES</span>
+                        <span class="tech-label" style="color: var(--muted-red);">DETECTED</span>
+                    </div>
+                    <div class="kpi-num-row">
+                        <span class="kpi-num" style="color: var(--muted-red);" id="stat-anomalies">0</span>
+                    </div>
+                    <div class="kpi-micro-track">
+                        <div class="kpi-micro-fill" id="kpi-bar-anom" style="width: 0%; background-color: var(--muted-red);"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 4: Total Healings -->
+                <div class="kpi-box">
+                    <div class="kpi-box-top">
+                        <span class="tech-label">TOTAL HEALINGS</span>
+                        <span class="tech-label" style="color: var(--forest-green);">RESOLVED</span>
+                    </div>
+                    <div class="kpi-num-row">
+                        <span class="kpi-num" style="color: var(--forest-green);" id="stat-healings">0</span>
+                    </div>
+                    <div class="kpi-micro-track">
+                        <div class="kpi-micro-fill" id="kpi-bar-heal" style="width: 100%; background-color: var(--forest-green);"></div>
+                    </div>
+                </div>
             </div>
         </div>
-        
-    </div>
 
-    <script>
-        // API Calls
-        async function controlService(action, serviceName) {
-            try {
-                const res = await fetch(`/api/control/${action}/${serviceName}`, { method: 'POST' });
-                if (!res.ok) throw new Error("Failed to execute action");
-                console.log(`Action ${action} executed on ${serviceName}`);
-                fetchSystemStatus(); // Trigger immediate visual update
-            } catch (err) {
-                console.error(err);
-                alert(`Error executing ${action} on ${serviceName}`);
-            }
-        }
+        <!-- ============================================================
+             SECTION C (BOTTOM-CENTER): LIVE TELEMETRY (4 ENLARGED CHARTS)
+             ============================================================ -->
+        <div class="panel col-6">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="tech-label">OBSERVABILITY</span>
+                    <span>Live Telemetry</span>
+                </div>
+                <span class="tech-label">3S POLLING • PROMETHEUS</span>
+            </div>
 
-        // Charts Init
-        const timeLabels = [], cpuData = [], memData = [], latData = [], errData = [];
-        const MAX_POINTS = 20;
-        Chart.defaults.color = '#94a3b8';
-        Chart.defaults.font.family = "'Inter', sans-serif";
-        
-        function createChart(ctx, color, bg) {
-            return new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: timeLabels,
-                    datasets: [{ data: [], borderColor: color, backgroundColor: bg, borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-                    scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } },
-                    animation: { duration: 0 }
-                }
-            });
-        }
+            <div class="charts-2x2-grid">
+                <!-- Chart 1: CPU (%) - Forest Green -->
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <span class="chart-tag">
+                            <span class="chart-chip" style="background-color: var(--forest-green);"></span>
+                            System CPU
+                        </span>
+                        <span class="chart-val" id="chart-val-cpu">0.0%</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+                </div>
 
-        const cpuChart = createChart(document.getElementById('cpuChart'), '#3b82f6', 'rgba(59, 130, 246, 0.1)');
-        const memChart = createChart(document.getElementById('memChart'), '#10b981', 'rgba(16, 185, 129, 0.1)');
-        const latChart = createChart(document.getElementById('latencyChart'), '#f59e0b', 'rgba(245, 158, 11, 0.1)');
-        const errChart = createChart(document.getElementById('errorChart'), '#ef4444', 'rgba(239, 68, 68, 0.1)');
-        
-        cpuChart.options.plugins.title = { display: true, text: 'System CPU (%)', color: '#cbd5e1', font: {size: 13} };
-        memChart.options.plugins.title = { display: true, text: 'System Mem (MB)', color: '#cbd5e1', font: {size: 13} };
-        latChart.options.plugins.title = { display: true, text: 'Avg Latency (s)', color: '#cbd5e1', font: {size: 13} };
-        errChart.options.plugins.title = { display: true, text: 'Error Rate', color: '#cbd5e1', font: {size: 13} };
+                <!-- Chart 2: Memory (MB) - Muted Cyan -->
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <span class="chart-tag">
+                            <span class="chart-chip" style="background-color: var(--muted-cyan);"></span>
+                            System Memory
+                        </span>
+                        <span class="chart-val" id="chart-val-mem">0.0 MB</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="memChart"></canvas>
+                    </div>
+                </div>
 
-        // Render functions
-        function renderServices(servicesMap) {
-            const container = document.getElementById('services-container');
-            container.innerHTML = '';
-            
-            // To ensure stable order
-            const serviceNames = ["user-service", "order-service", "payment-service", "gateway-service"];
-            let anyDegraded = false;
+                <!-- Chart 3: Latency (s) - Muted Yellow -->
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <span class="chart-tag">
+                            <span class="chart-chip" style="background-color: var(--muted-yellow);"></span>
+                            Avg Latency
+                        </span>
+                        <span class="chart-val" id="chart-val-lat">0.000 s</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="latencyChart"></canvas>
+                    </div>
+                </div>
 
-            serviceNames.forEach(name => {
-                const svc = servicesMap[name];
-                if(!svc) return;
+                <!-- Chart 4: Error Rate - Muted Red -->
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <span class="chart-tag">
+                            <span class="chart-chip" style="background-color: var(--muted-red);"></span>
+                            Error Rate
+                        </span>
+                        <span class="chart-val" id="chart-val-err">0.00</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="errorChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                let badgeClass = 'badge-success';
-                if (svc.status === 'DEGRADED') { badgeClass = 'badge-error'; anyDegraded = true; }
-                if (svc.status === 'CRASHED') { badgeClass = 'badge-error'; anyDegraded = true; }
-                if (svc.status === 'RECOVERING') { badgeClass = 'badge-warning'; anyDegraded = true; }
+        <!-- ============================================================
+             SECTION D (BOTTOM-RIGHT): EVENT TIMELINE
+             ============================================================ -->
+        <div class="panel col-3">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="tech-label">STREAM</span>
+                    <span>Event Timeline</span>
+                </div>
+                <a href="javascript:void(0)" onclick="fetchSystemStatus()" class="tech-label" style="text-decoration: none; color: var(--forest-green);">SYNC</a>
+            </div>
 
-                container.innerHTML += `
-                    <div class="service-card">
-                        <div class="item-header">
-                            <h3>${svc.name}</h3>
-                            <span class="badge ${badgeClass}">${svc.status}</span>
+            <div class="timeline-scroll-box">
+                <div class="timeline-track" id="timeline-list">
+                    <div style="text-align: center; color: var(--text-muted); padding: 28px 0; font-size: 0.8125rem;">
+                        No events logged
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             SECTION E (BOTTOM FULL-WIDTH): AUTOHEAL PIPELINE BANNER
+             ============================================================ -->
+        <div class="col-12">
+            <div class="pipeline-bar">
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                    <span class="tech-label">PIPELINE</span>
+                    <strong style="font-size: 0.875rem;">Autonomous Self-Healing Loop</strong>
+                </div>
+
+                <div class="pipeline-track-inline">
+                    <!-- Stage 1 -->
+                    <div class="pipeline-step">
+                        <div class="step-icon" style="background-color: var(--soft-red); border: 1px solid #F5D3D1;">
+                            <svg width="12" height="12" viewBox="0 0 10 10"><polygon points="5,1 9,9 1,9" fill="#E66A6A"/></svg>
                         </div>
-                        <div class="service-metrics">
-                            <div>CPU: <span>${svc.cpu.toFixed(1)}%</span></div>
-                            <div>Memory: <span>${svc.memory.toFixed(1)} MB</span></div>
-                            <div>Latency: <span>${svc.latency.toFixed(3)} s</span></div>
-                            <div>Error Rate: <span>${svc.errorRate.toFixed(2)}</span></div>
-                        </div>
-                        <div class="control-panel">
-                            <button class="btn-red btn-full" onclick="controlService('stop', '${svc.name}')">STOP SERVICE</button>
-                            <button class="btn-yellow" onclick="controlService('cpu', '${svc.name}')">CPU OVERLOAD</button>
-                            <button class="btn-yellow" onclick="controlService('memory', '${svc.name}')">MEMORY LEAK</button>
-                            <button class="btn-yellow btn-full" onclick="controlService('latency', '${svc.name}')">LATENCY SPIKE</button>
-                            <button class="btn-blue btn-full" onclick="controlService('restart', '${svc.name}')">RESTART</button>
+                        <div class="step-info">
+                            <span class="step-title" style="color: var(--muted-red);">1. ANOMALY</span>
+                            <span class="step-desc" id="pipe-desc-1">Metric spike</span>
                         </div>
                     </div>
-                `;
-            });
 
-            // Update main status
-            const mainBadge = document.getElementById('main-status-badge');
-            const mainText = document.getElementById('system-status-text');
-            if (anyDegraded) {
-                mainBadge.style.background = 'rgba(239, 68, 68, 0.2)';
-                mainBadge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-                mainBadge.style.color = 'var(--accent-red)';
-                document.getElementById('system-dot').style.backgroundColor = 'var(--accent-red)';
-                mainText.innerText = 'DEGRADED';
-            } else {
-                mainBadge.style.background = 'rgba(16, 185, 129, 0.2)';
-                mainBadge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-                mainBadge.style.color = 'var(--accent-green)';
-                document.getElementById('system-dot').style.backgroundColor = 'var(--accent-green)';
-                mainText.innerText = 'HEALTHY';
-            }
+                    <span class="step-sep">→</span>
+
+                    <!-- Stage 2 -->
+                    <div class="pipeline-step">
+                        <div class="step-icon" style="background-color: var(--soft-yellow); border: 1px solid #FFE7B3;">
+                            <svg width="12" height="12" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#E9B949"/></svg>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-title" style="color: var(--muted-yellow);">2. DETECTION</span>
+                            <span class="step-desc" id="pipe-desc-2">Prometheus rule</span>
+                        </div>
+                    </div>
+
+                    <span class="step-sep">→</span>
+
+                    <!-- Stage 3 -->
+                    <div class="pipeline-step">
+                        <div class="step-icon" style="background-color: var(--soft-lavender); border: 1px solid #DFD7F2;">
+                            <svg width="12" height="12" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="#9B8BC4"/></svg>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-title" style="color: var(--muted-purple);">3. DIAGNOSIS</span>
+                            <span class="step-desc" id="pipe-desc-3">Engine isolation</span>
+                        </div>
+                    </div>
+
+                    <span class="step-sep">→</span>
+
+                    <!-- Stage 4 -->
+                    <div class="pipeline-step">
+                        <div class="step-icon" style="background-color: var(--soft-cyan); border: 1px solid #CEEBE6;">
+                            <svg width="12" height="12" viewBox="0 0 10 10"><path d="M5 1 L9 5 L5 9 L1 5 Z" fill="#68B7AD"/></svg>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-title" style="color: var(--muted-cyan);">4. ACTION</span>
+                            <span class="step-desc" id="pipe-desc-4">restart_service</span>
+                        </div>
+                    </div>
+
+                    <span class="step-sep">→</span>
+
+                    <!-- Stage 5 -->
+                    <div class="pipeline-step active">
+                        <div class="step-icon" style="background-color: var(--pale-green); border: 1px solid var(--soft-green);">
+                            <svg width="12" height="12" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#176B4D"/></svg>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-title" style="color: var(--forest-green);">5. RECOVERY</span>
+                            <span class="step-desc" id="pipe-desc-5">Fleet healthy</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="toast-container"></div>
+
+<!-- ============================================================
+     3. SCRIPT LOGIC (POLLING, CHARTS, TIMELINE & CONTROLS)
+     ============================================================ -->
+<script>
+    // --- LIVE CLOCK ---
+    function updateClock() {
+        const now = new Date();
+        const dateOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+        document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', dateOptions);
+        document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US');
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // --- TOAST FEEDBACK ---
+    function showToast(msg, isError = false) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast-msg ${isError ? 'error' : ''}`;
+        toast.innerText = msg;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(8px)';
+            toast.style.transition = 'all 150ms ease';
+            setTimeout(() => toast.remove(), 160);
+        }, 3200);
+    }
+
+    // --- DROPDOWN CLOSURE ---
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.menu-wrap')) {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+            document.querySelectorAll('.menu-trigger').forEach(b => b.classList.remove('active'));
         }
+    });
 
-        function renderTimeline(data) {
-            const timeline = document.getElementById('timeline-list');
-            
-            // Combine anomalies and healing into one timeline
-            let events = [];
+    function toggleDropdown(btnId, menuId) {
+        const menu = document.getElementById(menuId);
+        const btn = document.getElementById(btnId);
+        const isOpen = menu.classList.contains('show');
+
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+        document.querySelectorAll('.menu-trigger').forEach(b => b.classList.remove('active'));
+
+        if (!isOpen) {
+            menu.classList.add('show');
+            btn.classList.add('active');
+        }
+    }
+
+    // --- SERVICE ACTIONS (NO USELESS BUTTONS; CLEAN CONTEXTUAL MENU) ---
+    async function controlService(action, serviceName) {
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+        document.querySelectorAll('.menu-trigger').forEach(b => b.classList.remove('active'));
+
+        showToast(`Executing ${action} on ${serviceName}...`);
+
+        try {
+            const res = await fetch(`/api/control/${action}/${serviceName}`, { method: 'POST' });
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(errText || "Action failed");
+            }
+            const msg = await res.text();
+            showToast(msg || `Simulated ${action} on ${serviceName}`);
+            fetchSystemStatus();
+        } catch (err) {
+            console.error(err);
+            showToast(`Error executing ${action} on ${serviceName}: ${err.message}`, true);
+        }
+    }
+
+    // --- CHART INITIALIZATION (BAUHAUS EDITORIAL LIGHT) ---
+    const MAX_POINTS = 20;
+    const timeLabels = [], cpuData = [], memData = [], latData = [], errData = [];
+
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#68736E';
+
+    function initChart(canvasId, lineColor) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    data: [],
+                    borderColor: lineColor,
+                    borderWidth: 1.5,
+                    backgroundColor: 'transparent',
+                    pointRadius: 0,
+                    tension: 0.25,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 0 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#FFFFFF',
+                        titleColor: '#17221E',
+                        bodyColor: '#17221E',
+                        borderColor: '#D5DDD7',
+                        borderWidth: 1,
+                        padding: 8,
+                        displayColors: false,
+                        titleFont: { family: "'Inter', sans-serif", size: 11, weight: '600' },
+                        bodyFont: { family: "ui-monospace, SFMono-Regular, monospace", size: 11 }
+                    }
+                },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#E6EBE7', drawBorder: false, lineWidth: 1 },
+                        ticks: { font: { family: "ui-monospace, monospace", size: 10 }, color: '#8E9994', maxTicksLimit: 4 }
+                    }
+                }
+            }
+        });
+    }
+
+    const cpuChart = initChart('cpuChart', '#176B4D');     // Forest Green
+    const memChart = initChart('memChart', '#68B7AD');     // Muted Cyan
+    const latChart = initChart('latencyChart', '#E9B949'); // Muted Yellow
+    const errChart = initChart('errorChart', '#E66A6A');   // Muted Red
+
+    // --- BAUHAUS GEOMETRIC IDENTITY MARKS PER SERVICE ---
+    function getGeometricMark(service) {
+        switch (service) {
+            case 'user-service':
+                return `
+                    <svg class="service-geo-mark" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="2" width="10" height="10" fill="#DCEDE5" stroke="#176B4D" stroke-width="1"/>
+                        <rect x="7" y="7" width="11" height="11" fill="#EDF6F1" stroke="#176B4D" stroke-width="1.2"/>
+                    </svg>
+                `;
+            case 'order-service':
+                return `
+                    <svg class="service-geo-mark" viewBox="0 0 20 20" fill="none">
+                        <polygon points="10,2 18,17 2,17" fill="#EEEAF7" stroke="#9B8BC4" stroke-width="1.2"/>
+                        <rect x="11" y="9" width="7" height="7" fill="#FFF3D2" stroke="#E9B949" stroke-width="1"/>
+                    </svg>
+                `;
+            case 'payment-service':
+                return `
+                    <svg class="service-geo-mark" viewBox="0 0 20 20" fill="none">
+                        <circle cx="8" cy="10" r="6" fill="#DCEDE5" stroke="#176B4D" stroke-width="1.2"/>
+                        <rect x="10" y="5" width="8" height="10" fill="#E3F2EF" stroke="#68B7AD" stroke-width="1"/>
+                    </svg>
+                `;
+            case 'gateway-service':
+                return `
+                    <svg class="service-geo-mark" viewBox="0 0 20 20" fill="none">
+                        <polygon points="3,3 17,3 10,17" fill="#FBE8E7" stroke="#E66A6A" stroke-width="1.2"/>
+                        <line x1="3" y1="3" x2="17" y2="17" stroke="#E66A6A" stroke-width="1.2"/>
+                    </svg>
+                `;
+            default:
+                return `
+                    <svg class="service-geo-mark" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="7" stroke="#17221E" stroke-width="1.2"/>
+                    </svg>
+                `;
+        }
+    }
+
+    // Micro Sparkline Generator
+    function renderSparkline(cpu, latency) {
+        const h = 26;
+        const norm = Math.min(22, Math.max(2, (cpu / 5) + (latency * 10)));
+        const p1 = h - 3;
+        const p2 = h - Math.min(h - 2, norm * 0.7 + 2);
+        const p3 = h - Math.min(h - 2, norm + 3);
+        const p4 = h - Math.min(h - 2, norm * 0.5 + 2);
+        const p5 = h - 4;
+
+        return `
+            <svg class="sparkline-svg" viewBox="0 0 120 26" fill="none">
+                <path d="M 0 ${p1} Q 25 ${p2}, 50 ${p3} T 95 ${p4} L 120 ${p5}" stroke="#176B4D" stroke-width="1.5" fill="none" />
+                <path d="M 0 ${p1} Q 25 ${p2}, 50 ${p3} T 95 ${p4} L 120 ${p5} L 120 26 L 0 26 Z" fill="#DCEDE5" opacity="0.4" />
+            </svg>
+        `;
+    }
+
+    // --- RENDER SERVICES FLEET CARDS ---
+    function renderServices(servicesMap) {
+        const container = document.getElementById('services-container');
+        if (!container) return;
+
+        const serviceNames = ["user-service", "order-service", "payment-service", "gateway-service"];
+        let anyDegraded = false;
+        let htmlBuffer = '';
+
+        serviceNames.forEach(name => {
+            const svc = servicesMap[name];
+            if (!svc) return;
+
+            let statusClass = 'status-healthy';
+            let statusText = 'HEALTHY';
+
+            if (svc.status === 'DEGRADED') {
+                statusClass = 'status-degraded';
+                statusText = 'DEGRADED';
+                anyDegraded = true;
+            } else if (svc.status === 'CRASHED') {
+                statusClass = 'status-crashed';
+                statusText = 'CRASHED';
+                anyDegraded = true;
+            } else if (svc.status === 'RECOVERING') {
+                statusClass = 'status-recovering';
+                statusText = 'HEALING';
+                anyDegraded = true;
+            }
+
+            const menuId = `menu-${name}`;
+            const btnId = `btn-${name}`;
+            const geoMark = getGeometricMark(name);
+            const sparkline = renderSparkline(svc.cpu, svc.latency);
+
+            htmlBuffer += `
+                <div class="service-card">
+                    <!-- Top Header -->
+                    <div class="service-card-top">
+                        <div class="service-identity">
+                            ${geoMark}
+                            <span class="service-name">${svc.name}</span>
+                        </div>
+                        <div class="service-status-pill ${statusClass}">
+                            <span class="dot"></span>
+                            <span>${statusText}</span>
+                        </div>
+                    </div>
+
+                    <!-- 2x2 Metrics -->
+                    <div class="service-metrics-grid">
+                        <div class="metric-cell">
+                            <span class="label">CPU</span>
+                            <span class="val">${Number(svc.cpu).toFixed(1)}%</span>
+                        </div>
+                        <div class="metric-cell">
+                            <span class="label">MEMORY</span>
+                            <span class="val">${Number(svc.memory).toFixed(1)} MB</span>
+                        </div>
+                        <div class="metric-cell">
+                            <span class="label">LATENCY</span>
+                            <span class="val">${Number(svc.latency).toFixed(3)} s</span>
+                        </div>
+                        <div class="metric-cell">
+                            <span class="label">ERROR RATE</span>
+                            <span class="val">${Number(svc.errorRate).toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Sparkline -->
+                    <div class="service-sparkline-wrap">
+                        ${sparkline}
+                    </div>
+
+                    <!-- Card Action Footer: Clean Quick Restart + Context Menu (NO CLUTTER) -->
+                    <div class="service-card-footer">
+                        <button class="service-action-quick" onclick="controlService('restart', '${svc.name}')" title="Clean Restart">
+                            ↻ Restart
+                        </button>
+
+                        <div class="menu-wrap">
+                            <button id="${btnId}" class="menu-trigger" onclick="toggleDropdown('${btnId}', '${menuId}')" title="Fault Injection & Controls">⋮</button>
+                            <div id="${menuId}" class="dropdown-menu">
+                                <button class="dropdown-item" onclick="controlService('cpu', '${svc.name}')">
+                                    ⚡ Simulate CPU overload
+                                </button>
+                                <button class="dropdown-item" onclick="controlService('memory', '${svc.name}')">
+                                    📊 Simulate memory leak
+                                </button>
+                                <button class="dropdown-item" onclick="controlService('latency', '${svc.name}')">
+                                    ⏱ Simulate latency spike
+                                </button>
+                                <div class="dropdown-divider"></div>
+                                <button class="dropdown-item danger" onclick="controlService('stop', '${svc.name}')">
+                                    ■ Stop service
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = htmlBuffer;
+
+        // Header System Status Badge Update
+        const mainBadge = document.getElementById('main-status-badge');
+        const mainText = document.getElementById('system-status-text');
+
+        if (anyDegraded) {
+            mainBadge.className = 'status-badge degraded';
+            mainText.innerText = 'DEGRADED';
+        } else {
+            mainBadge.className = 'status-badge';
+            mainText.innerText = 'HEALTHY';
+        }
+    }
+
+    // --- RENDER EVENT TIMELINE ---
+    function renderTimeline(data) {
+        const container = document.getElementById('timeline-list');
+        if (!container) return;
+
+        let events = [];
+
+        if (data.anomalies && Array.isArray(data.anomalies)) {
             data.anomalies.forEach(a => {
-                events.push({ time: a.timestamp, html: `<span class="timestamp">[${new Date(a.timestamp).toLocaleTimeString()}]</span> <span style="color:var(--accent-red)">anomaly detected</span> in ${a.service}` });
-                // Simulate crash event immediately prior to anomaly for timeline effect if score is high
+                events.push({
+                    time: a.timestamp,
+                    tag: 'ANOMALY DETECTED',
+                    tagClass: 'tag-anom',
+                    dotClass: 'anomaly',
+                    service: a.service,
+                    text: a.metrics ? `Anomaly score ${Number(a.score).toFixed(2)} (${a.metrics})` : 'Metric threshold anomaly'
+                });
+
                 if (a.score > 0.8) {
                     let d = new Date(a.timestamp);
                     d.setSeconds(d.getSeconds() - 2);
-                    events.push({ time: d.toISOString(), html: `<span class="timestamp">[${d.toLocaleTimeString()}]</span> <span style="color:var(--accent-yellow)">${a.service} metric spiked / crashed</span>` });
+                    events.push({
+                        time: d.toISOString(),
+                        tag: 'METRIC SPIKED',
+                        tagClass: 'tag-warn',
+                        dotClass: 'warning',
+                        service: a.service,
+                        text: 'Spike threshold exceeded'
+                    });
                 }
             });
-            
+        }
+
+        if (data.healingEvents && Array.isArray(data.healingEvents)) {
             data.healingEvents.forEach(h => {
-                events.push({ time: h.timestamp, html: `<span class="timestamp">[${new Date(h.timestamp).toLocaleTimeString()}]</span> <span style="color:var(--accent-blue)">healing triggered:</span> ${h.action} on ${h.service}` });
-                if (h.success) {
+                events.push({
+                    time: h.timestamp,
+                    tag: 'HEALING TRIGGERED',
+                    tagClass: 'tag-heal',
+                    dotClass: 'healing',
+                    service: h.service,
+                    text: `${h.action} on ${h.service}`
+                });
+
+                if (h.result === 'SUCCESS') {
                     let d = new Date(h.timestamp);
                     d.setSeconds(d.getSeconds() + 3);
-                    events.push({ time: d.toISOString(), html: `<span class="timestamp">[${d.toLocaleTimeString()}]</span> <span style="color:var(--accent-green)">service recovered:</span> ${h.service}` });
+                    events.push({
+                        time: d.toISOString(),
+                        tag: 'AUTO-HEAL COMPLETED',
+                        tagClass: 'tag-reco',
+                        dotClass: 'recovery',
+                        service: h.service,
+                        text: 'Service restored healthy'
+                    });
                 }
-            });
-
-            // Sort descending by time
-            events.sort((a,b) => new Date(b.time) - new Date(a.time));
-
-            if (events.length === 0) {
-               timeline.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No events logged</div>';
-               return;
-            }
-
-            timeline.innerHTML = '';
-            events.slice(0, 20).forEach(e => {
-                timeline.innerHTML += `<div class="list-item" style="font-size:0.85rem">${e.html}</div>`;
             });
         }
 
-        async function fetchSystemStatus() {
-            try {
-                // Fetch overarching data
-                const res = await fetch('/api/status');
-                if (!res.ok) throw new Error("Network error");
-                const data = await res.json();
-                
-                // Fetch individual service data
-                const svcRes = await fetch('/api/services');
-                if (!svcRes.ok) throw new Error("Network error");
-                const svcData = await svcRes.json();
+        events.sort((a, b) => new Date(b.time) - new Date(a.time));
 
-                renderServices(svcData);
-                renderTimeline(data);
-                
-                document.getElementById('stat-rps').innerText = Number(data.currentRps).toFixed(1);
-                document.getElementById('stat-anomalies').innerText = data.anomalies.length;
-                document.getElementById('stat-healings').innerText = data.healingEvents.length;
-                document.getElementById('stat-availability').innerText = Number(data.availability).toFixed(1) + '%';
-
-                const now = new Date().toLocaleTimeString();
-                if (timeLabels.length > MAX_POINTS) {
-                    timeLabels.shift(); cpuData.shift(); memData.shift(); latData.shift(); errData.shift();
-                }
-                timeLabels.push(now);
-                cpuData.push(data.currentCpu);
-                memData.push(data.currentMem);
-                latData.push(data.currentLatency);
-                errData.push(data.currentErrorRate);
-
-                cpuChart.data.datasets[0].data = cpuData; cpuChart.update();
-                memChart.data.datasets[0].data = memData; memChart.update();
-                latChart.data.datasets[0].data = latData; latChart.update();
-                errChart.data.datasets[0].data = errData; errChart.update();
-
-            } catch (err) {
-                console.error("Dashboard pull failed", err);
-            }
+        if (events.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; color: var(--text-muted); padding: 28px 0; font-size: 0.8125rem;">
+                    No events logged
+                </div>
+            `;
+            return;
         }
 
-        setInterval(fetchSystemStatus, 3000);
-        fetchSystemStatus();
-    </script>
+        let html = '';
+        events.slice(0, 25).forEach(e => {
+            const timeStr = new Date(e.time).toLocaleTimeString('en-US', { hour12: false });
+            html += `
+                <div class="timeline-entry">
+                    <span class="timeline-dot ${e.dotClass}"></span>
+                    <div class="timeline-entry-meta">
+                        <span class="entry-time">[${timeStr}]</span>
+                        <span class="entry-tag ${e.tagClass}">${e.tag}</span>
+                    </div>
+                    <span class="entry-service">${e.service}</span>
+                    <span class="entry-text">${e.text}</span>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    // --- PIPELINE DYNAMIC UPDATE ---
+    function updatePipeline(data) {
+        if (data.anomalies && data.anomalies.length > 0) {
+            const latest = data.anomalies[0];
+            document.getElementById('pipe-desc-1').innerText = `${latest.service} spike`;
+            document.getElementById('pipe-desc-2').innerText = `${latest.service}`;
+        }
+        if (data.healingEvents && data.healingEvents.length > 0) {
+            const latest = data.healingEvents[0];
+            document.getElementById('pipe-desc-4').innerText = `${latest.action}`;
+        }
+    }
+
+    // --- MAIN FETCH STATUS ---
+    async function fetchSystemStatus() {
+        try {
+            const [statusRes, servicesRes] = await Promise.all([
+                fetch('/api/status'),
+                fetch('/api/services')
+            ]);
+
+            if (!statusRes.ok || !servicesRes.ok) throw new Error("Telemetry fetch failed");
+
+            const data = await statusRes.json();
+            const svcData = await servicesRes.json();
+
+            // 1. Render microservices cards
+            renderServices(svcData);
+
+            // 2. Render timeline
+            renderTimeline(data);
+
+            // 3. Update pipeline
+            updatePipeline(data);
+
+            // 4. Update KPIs
+            const avail = Number(data.availability || 100.0).toFixed(1);
+            const rps = Number(data.currentRps || 0.0).toFixed(1);
+            const anomCount = (data.anomalies || []).length;
+            const healCount = (data.healingEvents || []).length;
+
+            document.getElementById('stat-availability').innerText = `${avail}%`;
+            document.getElementById('kpi-bar-avail').style.width = `${Math.min(100, Math.max(0, avail))}%`;
+
+            document.getElementById('stat-rps').innerText = `${rps} RPS`;
+            document.getElementById('kpi-bar-rps').style.width = `${Math.min(100, Math.max(5, rps * 20))}%`;
+
+            document.getElementById('stat-anomalies').innerText = anomCount;
+            document.getElementById('kpi-bar-anom').style.width = `${Math.min(100, anomCount * 10)}%`;
+
+            document.getElementById('stat-healings').innerText = healCount;
+            document.getElementById('kpi-bar-heal').style.width = `${Math.min(100, healCount * 10)}%`;
+
+            // 5. Update Charts
+            const cpuVal = (Number(data.currentCpu || 0.0) * 100).toFixed(1);
+            const memVal = Number(data.currentMem || 0.0).toFixed(1);
+            const latVal = Number(data.currentLatency || 0.0).toFixed(3);
+            const errVal = Number(data.currentErrorRate || 0.0).toFixed(2);
+
+            document.getElementById('chart-val-cpu').innerText = `${cpuVal}%`;
+            document.getElementById('chart-val-mem').innerText = `${memVal} MB`;
+            document.getElementById('chart-val-lat').innerText = `${latVal} s`;
+            document.getElementById('chart-val-err').innerText = errVal;
+
+            const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+            if (timeLabels.length >= MAX_POINTS) {
+                timeLabels.shift(); cpuData.shift(); memData.shift(); latData.shift(); errData.shift();
+            }
+
+            timeLabels.push(now);
+            cpuData.push(parseFloat(cpuVal));
+            memData.push(parseFloat(memVal));
+            latData.push(parseFloat(latVal));
+            errData.push(parseFloat(errVal));
+
+            cpuChart.data.datasets[0].data = cpuData; cpuChart.update();
+            memChart.data.datasets[0].data = memData; memChart.update();
+            latChart.data.datasets[0].data = latData; latChart.update();
+            errChart.data.datasets[0].data = errData; errChart.update();
+
+        } catch (err) {
+            console.warn("Telemetry pull skipped or server busy:", err);
+        }
+    }
+
+    setInterval(fetchSystemStatus, 3000);
+    fetchSystemStatus();
+</script>
 </body>
 </html>
