@@ -1,0 +1,79 @@
+name: AutoHeal-J CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  # =======================================================
+  # 1. BUILD JAVA SPRING BOOT MICROSERVICES
+  # =======================================================
+  build-java-services:
+    name: Build Java Microservices (Maven)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build All Microservices
+        run: |
+          mvn clean package -DskipTests=true --batch-mode
+
+  # =======================================================
+  # 2. VALIDATE PYTHON ENGINES
+  # =======================================================
+  validate-python-engines:
+    name: Validate Python AI & Healing Engines
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install & Compile Anomaly Engine
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r anomaly-detection-engine/requirements.txt
+          python -m py_compile anomaly-detection-engine/main.py
+
+      - name: Install & Compile Healing Engine
+        run: |
+          pip install -r healing-engine/requirements.txt
+          python -m py_compile healing-engine/main.py
+
+  # =======================================================
+  # 3. VALIDATE KUBERNETES MANIFESTS
+  # =======================================================
+  validate-k8s:
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate K8s YAML Syntax via kubectl dry-run
+        run: |
+          for manifest in k8s/*.yaml; do
+            echo "Validating $manifest..."
+            kubectl apply --dry-run=client -f "$manifest"
+          done
