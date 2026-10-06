@@ -91,6 +91,9 @@ public class DashboardController {
         return dashboardData.getServiceStatuses();
     }
 
+    @org.springframework.beans.factory.annotation.Value("${autoheal.security.admin-token:autoheal-secure-admin-token}")
+    private String adminToken;
+
     @PostMapping("/api/control/{action}/{service}")
     @ResponseBody
     public ResponseEntity<String> controlService(@PathVariable String action, @PathVariable String service) {
@@ -122,7 +125,10 @@ public class DashboardController {
         
         try {
             RestTemplate restTemplate = new RestTemplate();
-            restTemplate.getForObject(url, String.class);
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("X-AutoHeal-Admin-Token", adminToken);
+            org.springframework.http.HttpEntity<Void> requestEntity = new org.springframework.http.HttpEntity<>(headers);
+            restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, requestEntity, String.class);
             return ResponseEntity.ok("Simulated " + action + " on " + service);
         } catch (Exception e) {
             // JVM crashes usually return an error or EOF because the connection is dropped.
@@ -134,6 +140,15 @@ public class DashboardController {
     }
 
     private String getServiceUrl(String service) {
+        if (System.getenv("KUBERNETES_SERVICE_HOST") != null) {
+            switch (service) {
+                case "user-service": return "http://user-service:8081";
+                case "order-service": return "http://order-service:8082";
+                case "payment-service": return "http://payment-service:8083";
+                case "gateway-service": return "http://gateway-service:8080";
+                default: return "http://" + service;
+            }
+        }
         switch (service) {
             case "user-service": return "http://localhost:8081";
             case "order-service": return "http://localhost:8082";
