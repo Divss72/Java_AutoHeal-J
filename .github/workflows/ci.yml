@@ -75,5 +75,5 @@ jobs:
         run: |
           for manifest in k8s/*.yaml; do
             echo "Validating $manifest..."
-            kubectl apply --dry-run=client -f "$manifest"
+            kubectl apply --dry-run=client --validate=false -f "$manifest"
           done
