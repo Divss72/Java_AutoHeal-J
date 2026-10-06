@@ -1,9 +1,8 @@
 """
 AutoHeal-J Anomaly Detection Module
 -----------------------------------
-DISCLAIMER: This repository contains a simplified research prototype.
-Core optimization logic, specific telemetry heuristics, and granular algorithmic
-tuning have been intentionally abstracted or generalized in this public release.
+AI-driven telemetry monitoring using Prometheus metrics and
+Isolation Forest unsupervised anomaly detection with multi-sample confirmation.
 """
 
 import os
@@ -22,9 +21,7 @@ DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:8085")
 QUERY_ENDPOINT = f"{PROMETHEUS_URL}/api/v1/query"
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "5"))
 
-# Abstracted parameters
-ALPHA = float(os.getenv("CONTAMINATION", "0.1"))
-
+ALPHA = float(os.getenv("CONTAMINATION", "0.05"))
 TRACKED_ENTITIES = ["user-service", "order-service", "payment-service", "gateway-service"]
 
 DATA_VECTOR_TEMPLATES = {
@@ -49,18 +46,24 @@ def retrieve_telemetry(query):
                     values.append(float(val_str))
             if values:
                 return sum(values) / len(values)
-    except Exception as e:
+    except Exception:
         pass
     return 0.0
 
 def main():
-    logger.info(f"Starting Abstracted Engine. Prometheus: {PROMETHEUS_URL}")
+    logger.info(f"Starting Anomaly Detection Engine. Prometheus: {PROMETHEUS_URL}")
     
-    # Core algorithm obfuscation mapping
     active_models = {svc: AbstractDetector(contamination=ALPHA, random_state=42) for svc in TRACKED_ENTITIES}
     state_histories = {svc: [] for svc in TRACKED_ENTITIES}
     
+    # Stability: Consecutive counter and alert cooldown to prevent thrashing
+    down_pulse_counts = {svc: 0 for svc in TRACKED_ENTITIES}
+    anomaly_streak_counts = {svc: 0 for svc in TRACKED_ENTITIES}
+    last_alert_time = {svc: 0 for svc in TRACKED_ENTITIES}
+    ALERT_COOLDOWN = 60  # seconds between repeated alerts for same service
+    
     while True:
+        now = time.time()
         for entity in TRACKED_ENTITIES:
             v_vector = []
             v_dict = {}
@@ -71,27 +74,37 @@ def main():
                 val = retrieve_telemetry(computation)
                 v_dict[key] = val
                 
-                # Validation mapping abstracted
                 if key == "v1" and val == 0.0:
                     primary_pulse = False
                 
                 if key != "v1":
                     v_vector.append(val)
             
+            # 1. Primary pulse check (Service connectivity)
             if not primary_pulse:
-                logger.warning(f"CRITICAL STATE EXCEPTION: {entity}. Initiating safety protocol...")
-                payload = {"service": entity, "metrics": str(v_dict), "score": -1.0, "type": "PRIMARY_INFRA_FAILURE"}
-                try:
-                    requests.post(HEALING_ENGINE_URL, json=payload, timeout=5)
-                    requests.post(f"{DASHBOARD_URL}/api/webhook/anomaly", json=payload, timeout=5)
-                except Exception:
-                    pass
+                down_pulse_counts[entity] += 1
+                # Require 3 consecutive failed scrapes (15s) to avoid false alarms during rolling restarts
+                if down_pulse_counts[entity] >= 3:
+                    if now - last_alert_time[entity] >= ALERT_COOLDOWN:
+                        logger.warning(f"CRITICAL STATE EXCEPTION: {entity} down for {down_pulse_counts[entity] * POLL_INTERVAL}s. Initiating safety protocol...")
+                        payload = {"service": entity, "metrics": str(v_dict), "score": -1.0, "type": "PRIMARY_INFRA_FAILURE"}
+                        last_alert_time[entity] = now
+                        try:
+                            requests.post(HEALING_ENGINE_URL, json=payload, timeout=5)
+                            requests.post(f"{DASHBOARD_URL}/api/webhook/anomaly", json=payload, timeout=5)
+                        except Exception:
+                            pass
+                else:
+                    logger.info(f"Transient pulse drop observed for {entity} ({down_pulse_counts[entity]}/3)...")
                 continue
+            else:
+                down_pulse_counts[entity] = 0
 
+            # 2. Telemetry vector normalization & history update
             v_vector = [0.0 if np.isnan(v) or np.isinf(v) else v for v in v_vector]
             state_histories[entity].append(v_vector)
             
-            # Generalized heuristics trigger
+            # 3. AI Isolation Forest Anomaly Detection
             if len(state_histories[entity]) > 15:
                 X_matrix = np.array(state_histories[entity])
                 try:
@@ -101,13 +114,20 @@ def main():
                     binary_pred = active_models[entity].predict(current_state)[0]
                     
                     if binary_pred == -1:
-                        logger.warning(f"THRESHOLD EXCEEDED: Heuristics matched for {entity}. Deviation: {deviation_score:.3f}")
-                        payload = {"service": entity, "metrics": str(v_dict), "score": float(deviation_score), "type": "HEURISTIC_ANOMALY"}
-                        try:
-                            requests.post(HEALING_ENGINE_URL, json=payload, timeout=5)
-                            requests.post(f"{DASHBOARD_URL}/api/webhook/anomaly", json=payload, timeout=5)
-                        except Exception:
-                            pass
+                        anomaly_streak_counts[entity] += 1
+                        # Require 3 consecutive anomaly classifications to eliminate false positives
+                        if anomaly_streak_counts[entity] >= 3:
+                            if now - last_alert_time[entity] >= ALERT_COOLDOWN:
+                                logger.warning(f"THRESHOLD EXCEEDED: Anomaly confirmed for {entity}. Deviation: {deviation_score:.3f}")
+                                payload = {"service": entity, "metrics": str(v_dict), "score": float(deviation_score), "type": "HEURISTIC_ANOMALY"}
+                                last_alert_time[entity] = now
+                                try:
+                                    requests.post(HEALING_ENGINE_URL, json=payload, timeout=5)
+                                    requests.post(f"{DASHBOARD_URL}/api/webhook/anomaly", json=payload, timeout=5)
+                                except Exception:
+                                    pass
+                    else:
+                        anomaly_streak_counts[entity] = 0
                 except Exception:
                     pass
                 

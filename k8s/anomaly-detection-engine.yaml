@@ -22,8 +22,14 @@ spec:
           env:
             - name: PROMETHEUS_URL
               value: "http://prometheus:9090"
+            - name: HEALING_ENGINE_URL
+              value: "http://healing-engine:5000/alert"
+            - name: DASHBOARD_URL
+              value: "http://autoheal-dashboard-service:8080"
             - name: POLL_INTERVAL
               value: "5"
+            - name: CONTAMINATION
+              value: "0.05"
           volumeMounts:
             - name: code
               mountPath: /app/main.py

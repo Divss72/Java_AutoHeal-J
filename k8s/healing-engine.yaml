@@ -5,9 +5,10 @@ metadata:
   namespace: default
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   name: healing-engine
+  namespace: default
 rules:
 - apiGroups: [""]
   resources: ["pods"]
@@ -17,12 +18,13 @@ rules:
   verbs: ["get", "list", "watch", "patch", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   name: healing-engine
+  namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: healing-engine
 subjects:
 - kind: ServiceAccount
@@ -50,12 +52,26 @@ spec:
       containers:
         - name: healing-engine
           image: healing-engine:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
           env:
             - name: TARGET_NAMESPACE
               value: "default"
+            - name: USE_LOCAL
+              value: "false"
+            - name: COOLDOWN_PERIOD_SECONDS
+              value: "60"
+            - name: DASHBOARD_URL
+              value: "http://autoheal-dashboard-service:8080"
+          volumeMounts:
+            - name: code
+              mountPath: /app/main.py
+              subPath: main.py
+      volumes:
+        - name: code
+          configMap:
+            name: healing-engine-code
 ---
 apiVersion: v1
 kind: Service
